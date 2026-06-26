@@ -884,17 +884,8 @@ async function loadDropdowns() {
     const opt = document.createElement('option');
     opt.value = o.option_code;
     opt.textContent = `${o.option_code} - ${o.option_name}`;
-    sel.appendChild(opt);
+    colorSel.appendChild(opt);
   });
-  if (groups['VEHICLE_COLOR']) {
-    colorSel.innerHTML = '<option value="">— เลือกสี —</option>';
-    groups['VEHICLE_COLOR'].forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.option_code;
-      opt.textContent = `${o.option_code} - ${o.option_name}`;
-      colorSel.appendChild(opt);
-    });
-  }
 }
 
 // ============================================================
