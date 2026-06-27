@@ -717,16 +717,59 @@ textarea{resize:vertical;min-height:60px;}
 
 <script>
 // ============================================================
-// SUPABASE REST API (no SDK — direct fetch)
+// SUPABASE REST API — direct fetch (no SDK)
 // ============================================================
 const SUPABASE_URL = 'https://ndyqnuyijgcqxktqilwj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5keXFudXlpamdjcXhrdHFpbHdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MjY4ODIsImV4cCI6MjA5NjMwMjg4Mn0.PW-WZh5h-QnXiAnJrQYej3RnQKAXoh3jU15vU7KO1oU';
-const HEADERS = {
+const HDR = {
   'apikey': SUPABASE_KEY,
   'Authorization': 'Bearer ' + SUPABASE_KEY,
   'Content-Type': 'application/json',
   'Prefer': 'return=representation',
 };
+
+async function dbGet(table, filters = {}, orderBy = null) {
+  let url = `${SUPABASE_URL}/rest/v1/${table}?select=*`;
+  Object.entries(filters).forEach(([k, v]) => {
+    if (v !== null && v !== undefined) url += `&${k}=eq.${encodeURIComponent(v)}`;
+  });
+  if (orderBy) url += `&order=${orderBy}`;
+  const res = await fetch(url, { headers: HDR });
+  if (!res.ok) throw new Error(`${table}: ${await res.text()}`);
+  return res.json();
+}
+
+async function dbGetLike(table, col, val) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=*&${col}=like.${encodeURIComponent(val)}`;
+  const res = await fetch(url, { headers: HDR });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function dbInsert(table, body) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}`;
+  const res = await fetch(url, { method: 'POST', headers: HDR, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`insert ${table}: ${await res.text()}`);
+  const data = await res.json();
+  return Array.isArray(data) ? data[0] : data;
+}
+
+async function dbUpdate(table, id, body) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`;
+  const res = await fetch(url, { method: 'PATCH', headers: HDR, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`update ${table}: ${await res.text()}`);
+  const data = await res.json();
+  return Array.isArray(data) ? data[0] : data;
+}
+
+async function dbDelete(table, col, val) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(val)}`;
+  const res = await fetch(url, { method: 'DELETE', headers: HDR });
+  if (!res.ok) throw new Error(`delete ${table}: ${await res.text()}`);
+  return true;
+}
+
+// sb wrapper removed — using direct fetch functions above
 
 // Supabase REST wrapper
 const sb = {
@@ -851,8 +894,7 @@ async function init() {
 }
 
 async function loadBranches() {
-  const { data, error } = await sb.from('branches').eq('is_active', true).order('branch_code')._buildAndFetch();
-  if (error) throw new Error('branches: ' + JSON.stringify(error));
+  const data = await dbGet('branches', { is_active: true }, 'branch_code');
   BRANCHES = data || [];
   const sel = document.getElementById('branch');
   sel.innerHTML = '<option value="">— เลือกสาขา —</option>';
@@ -866,8 +908,7 @@ async function loadBranches() {
 
 async function loadSCByBranch(branchCode) {
   if (!branchCode) { SC_LIST = []; return; }
-  const { data, error } = await sb.from('sales_consultants').eq('branch_code', branchCode).eq('is_active', true).order('sc_code')._buildAndFetch();
-  if (error) throw new Error('SC: ' + JSON.stringify(error));
+  const data = await dbGet('sales_consultants', { branch_code: branchCode, is_active: true }, 'sc_code');
   SC_LIST = data || [];
   const sel = document.getElementById('sc-code');
   sel.innerHTML = '<option value="">— เลือก SC —</option>';
@@ -882,8 +923,7 @@ async function loadSCByBranch(branchCode) {
 }
 
 async function loadModels() {
-  const { data, error } = await sb.from('vehicle_models').eq('is_active', true).order('model_code')._buildAndFetch();
-  if (error) throw new Error(JSON.stringify(error));
+  const data = await dbGet('vehicle_models', { is_active: true }, 'model_code');
   MODELS = data || [];
   const sel = document.getElementById('vehicle-model');
   sel.innerHTML = '<option value="">— เลือกรุ่นรถ —</option>';
@@ -898,8 +938,7 @@ async function loadModels() {
 }
 
 async function loadProviders() {
-  const { data, error } = await sb.from('finance_providers').eq('is_active', true).order('provider_code')._buildAndFetch();
-  if (error) throw new Error(JSON.stringify(error));
+  const data = await dbGet('finance_providers', { is_active: true }, 'provider_code');
   PROVIDERS = data || [];
   const sel = document.getElementById('finance-provider');
   sel.innerHTML = '<option value="">— เลือกบริษัทไฟแนนซ์ —</option>';
@@ -912,10 +951,9 @@ async function loadProviders() {
 }
 
 async function loadPrograms(providerCode = null) {
-  const q = sb.from('finance_programs').eq('is_active', true).order('program_name');
-  if (providerCode) q.eq('provider_code', providerCode);
-  const { data, error } = await q._buildAndFetch();
-  if (error) throw new Error(JSON.stringify(error));
+  const filters = { is_active: true };
+  if (providerCode) filters.provider_code = providerCode;
+  const data = await dbGet('finance_programs', filters, 'program_name');
   PROGRAMS = data || [];
   const sel = document.getElementById('finance-program');
   sel.innerHTML = '<option value="">— เลือกโปรแกรม —</option>';
@@ -929,14 +967,12 @@ async function loadPrograms(providerCode = null) {
 }
 
 async function loadCampaigns() {
-  const { data, error } = await sb.from('campaigns').eq('is_active', true).order('campaign_name')._buildAndFetch();
-  if (error) throw new Error(JSON.stringify(error));
+  const data = await dbGet('campaigns', { is_active: true }, 'campaign_name');
   CAMPAIGNS_LIST = data || [];
 }
 
 async function loadDropdowns() {
-  const { data, error } = await sb.from('master_options').eq('is_active', true).order('sort_order')._buildAndFetch();
-  if (error) throw new Error(JSON.stringify(error));
+  const data = await dbGet('master_options', { is_active: true }, 'sort_order');
   const groups = {};
   (data || []).forEach(o => {
     if (!groups[o.group_code]) groups[o.group_code] = [];
@@ -1215,23 +1251,25 @@ async function saveOrder(status = null) {
   try {
     let result;
     if (CURRENT_SO_ID) {
-      const { data: updated, error } = await sb.from('sales_orders').eq('id', CURRENT_SO_ID).update(data);
+      const updated = await dbUpdate('sales_orders', CURRENT_SO_ID, data);
+      const error = null;
       if (error) throw new Error(JSON.stringify(error));
-      result = Array.isArray(updated) ? updated[0] : updated;
+      result = updated;
     } else {
       // Generate SO number
       const branch = data.branch_code;
       const saleDate = new Date(data.sale_date);
       const yymm = String(saleDate.getFullYear()).slice(2) + String(saleDate.getMonth()+1).padStart(2,'0');
       const prefix = branch + yymm;
-      const countRes = await sb.from('sales_orders').like('so_number', prefix+'%')._buildAndFetch();
-      const count = countRes.data?.length || 0;
+      const countData = await dbGetLike('sales_orders', 'so_number', prefix+'%');
+      const count = countData?.length || 0;
       const seq = String((count || 0) + 1).padStart(3, '0');
       data.so_number = prefix + seq;
 
-      const { data: inserted, error } = await sb.from('sales_orders').insert(data);
+      const inserted = await dbInsert('sales_orders', data);
+      const error = null;
       if (error) throw new Error(JSON.stringify(error));
-      result = Array.isArray(inserted) ? inserted[0] : inserted;
+      result = inserted;
       CURRENT_SO_ID = result?.id;
     }
 
@@ -1265,7 +1303,7 @@ async function submitForApproval() {
 
 async function saveCampaigns(orderId) {
   // Delete existing
-  await sb.from('sales_order_campaigns').eq('sales_order_id', orderId).delete();
+  await dbDelete('sales_order_campaigns', 'sales_order_id', orderId);
   // Insert new
   const rows = [];
   document.querySelectorAll('#campaign-tbody tr').forEach(tr => {
@@ -1282,7 +1320,7 @@ async function saveCampaigns(orderId) {
     }
   });
   if (rows.length > 0) {
-    await sb.from('sales_order_campaigns').insert(rows);
+    await dbInsert('sales_order_campaigns', rows);
   }
 }
 
@@ -1323,8 +1361,8 @@ async function sendToFinance() {
     const today = new Date();
     const yymm = String(today.getFullYear()).slice(2) + String(today.getMonth()+1).padStart(2,'0');
     const prefix = branch + yymm;
-    const countRes2 = await sb.from('finance_cases').like('case_id', prefix+'%')._buildAndFetch();
-    const count = countRes2.data?.length || 0;
+    const countData2 = await dbGetLike('finance_cases', 'case_id', prefix+'%');
+    const count = countData2?.length || 0;
     const seq = String((count || 0) + 1).padStart(3, '0');
     const caseId = prefix + seq;
 
@@ -1362,11 +1400,10 @@ async function sendToFinance() {
       round: 1,
     };
 
-    const { error } = await sb.from('finance_cases').insert(financeCase);
-    if (error) throw new Error(JSON.stringify(error));
+    await dbInsert('finance_cases', financeCase);
 
     // Link back to sales_order
-    await sb.from('sales_orders').eq('id', CURRENT_SO_ID).update({ finance_case_id: caseId, status: 'FINANCE_PROCESSING' });
+    await dbUpdate('sales_orders', CURRENT_SO_ID, { finance_case_id: caseId, status: 'FINANCE_PROCESSING' });
     CURRENT_STATUS = 'FINANCE_PROCESSING';
     updateStatusDisplay({ status: 'FINANCE_PROCESSING', so_number: document.getElementById('so-number-display').textContent });
 
