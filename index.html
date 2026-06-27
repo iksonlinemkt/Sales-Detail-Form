@@ -907,11 +907,12 @@ async function loadBranches() {
 }
 
 async function loadSCByBranch(branchCode) {
-  if (!branchCode) { SC_LIST = []; return; }
-  const data = await dbGet('sales_consultants', { branch_code: branchCode, is_active: true }, 'sc_code');
-  SC_LIST = data || [];
   const sel = document.getElementById('sc-code');
   sel.innerHTML = '<option value="">— เลือก SC —</option>';
+  document.getElementById('sc-name-display').textContent = '—';
+  if (!branchCode) { SC_LIST = []; return; }
+  const data = await dbGet('sales_consultants', { branch_code: branchCode }, 'sc_code');
+  SC_LIST = data || [];
   SC_LIST.forEach(sc => {
     const o = document.createElement('option');
     o.value = sc.sc_code;
@@ -919,7 +920,6 @@ async function loadSCByBranch(branchCode) {
     o.dataset.name = sc.full_name;
     sel.appendChild(o);
   });
-  document.getElementById('sc-name-display').textContent = '—';
 }
 
 async function loadModels() {
