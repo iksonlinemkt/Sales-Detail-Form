@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IKS - ใบยืนยันข้อตกลงการขาย / ใบคำขอสินเชื่อ</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -717,11 +717,96 @@ textarea{resize:vertical;min-height:60px;}
 
 <script>
 // ============================================================
-// SUPABASE CONFIG
+// SUPABASE REST API (no SDK — direct fetch)
 // ============================================================
 const SUPABASE_URL = 'https://ndyqnuyijgcqxktqilwj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5keXFudXlpamdjcXhrdHFpbHdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MjY4ODIsImV4cCI6MjA5NjMwMjg4Mn0.PW-WZh5h-QnXiAnJrQYej3RnQKAXoh3jU15vU7KO1oU';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation',
+};
+
+// Supabase REST wrapper
+const sb = {
+  from: (table) => ({
+    _table: table,
+    _filters: [],
+    _order: null,
+    _limit: null,
+    _head: false,
+    _select: '*',
+
+    select(cols = '*', opts = {}) {
+      this._select = cols;
+      if (opts.count === 'exact') this._head = true;
+      return this;
+    },
+    eq(col, val) { this._filters.push(`${col}=eq.${encodeURIComponent(val)}`); return this; },
+    like(col, val) { this._filters.push(`${col}=like.${encodeURIComponent(val)}`); return this; },
+    order(col, opts = {}) { this._order = `${col}${opts.ascending === false ? '.desc' : ''}`; return this; },
+    limit(n) { this._limit = n; return this; },
+
+    async _buildAndFetch(method = 'GET', body = null) {
+      let url = `${SUPABASE_URL}/rest/v1/${this._table}?select=${this._select}`;
+      this._filters.forEach(f => url += '&' + f);
+      if (this._order) url += `&order=${this._order}`;
+      if (this._limit) url += `&limit=${this._limit}`;
+
+      const h = { ...HEADERS };
+      if (this._head) h['Prefer'] = 'count=exact';
+
+      const res = await fetch(url, { method, headers: h, body: body ? JSON.stringify(body) : null });
+      const count = res.headers.get('content-range')?.split('/')[1];
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return { data: null, error: err, count: null };
+      }
+      if (method === 'DELETE' || (method === 'GET' && this._head)) {
+        return { data: null, error: null, count: count ? parseInt(count) : 0 };
+      }
+      const data = await res.json();
+      return { data, error: null, count: count ? parseInt(count) : null };
+    },
+
+    async get() { return this._buildAndFetch('GET'); },
+
+    // alias helpers
+    then(resolve) { return this._buildAndFetch('GET').then(resolve); },
+
+    async single() {
+      const res = await this._buildAndFetch('GET');
+      return { data: Array.isArray(res.data) ? res.data[0] : res.data, error: res.error };
+    },
+
+    async insert(body) {
+      const url = `${SUPABASE_URL}/rest/v1/${this._table}`;
+      const res = await fetch(url, { method: 'POST', headers: HEADERS, body: JSON.stringify(body) });
+      if (!res.ok) { const e = await res.json().catch(()=>({})); return { data: null, error: e }; }
+      const data = await res.json().catch(() => []);
+      return { data: Array.isArray(data) ? data[0] : data, error: null };
+    },
+
+    async update(body) {
+      let url = `${SUPABASE_URL}/rest/v1/${this._table}?`;
+      this._filters.forEach(f => url += f + '&');
+      const res = await fetch(url, { method: 'PATCH', headers: HEADERS, body: JSON.stringify(body) });
+      if (!res.ok) { const e = await res.json().catch(()=>({})); return { data: null, error: e }; }
+      const data = await res.json().catch(() => []);
+      return { data: Array.isArray(data) ? data[0] : data, error: null };
+    },
+
+    async delete() {
+      let url = `${SUPABASE_URL}/rest/v1/${this._table}?`;
+      this._filters.forEach(f => url += f + '&');
+      const res = await fetch(url, { method: 'DELETE', headers: HEADERS });
+      if (!res.ok) { const e = await res.json().catch(()=>({})); return { data: null, error: e }; }
+      return { data: null, error: null };
+    },
+  }),
+};
 
 // ============================================================
 // MASTER DATA CACHE
@@ -758,15 +843,16 @@ async function init() {
     calcAll();
     showToast('โหลดข้อมูลสำเร็จ ✅', 'success');
   } catch(e) {
-    showToast('โหลดข้อมูลบางส่วนล้มเหลว: ' + e.message, 'error');
-    console.error(e);
+    const msg = e?.message || e?.error_description || JSON.stringify(e) || 'Unknown error';
+    showToast('โหลดข้อมูลล้มเหลว: ' + msg, 'error');
+    console.error('Init error:', e);
   }
   document.getElementById('loading-overlay').style.display = 'none';
 }
 
 async function loadBranches() {
-  const { data, error } = await sb.from('branches').select('*').eq('is_active', true).order('branch_code');
-  if (error) throw error;
+  const { data, error } = await sb.from('branches').eq('is_active', true).order('branch_code')._buildAndFetch();
+  if (error) throw new Error('branches: ' + JSON.stringify(error));
   BRANCHES = data || [];
   const sel = document.getElementById('branch');
   sel.innerHTML = '<option value="">— เลือกสาขา —</option>';
@@ -780,9 +866,8 @@ async function loadBranches() {
 
 async function loadSCByBranch(branchCode) {
   if (!branchCode) { SC_LIST = []; return; }
-  const { data, error } = await sb.from('sales_consultants').select('*')
-    .eq('branch_code', branchCode).eq('is_active', true).order('sc_code');
-  if (error) throw error;
+  const { data, error } = await sb.from('sales_consultants').eq('branch_code', branchCode).eq('is_active', true).order('sc_code')._buildAndFetch();
+  if (error) throw new Error('SC: ' + JSON.stringify(error));
   SC_LIST = data || [];
   const sel = document.getElementById('sc-code');
   sel.innerHTML = '<option value="">— เลือก SC —</option>';
@@ -797,8 +882,8 @@ async function loadSCByBranch(branchCode) {
 }
 
 async function loadModels() {
-  const { data, error } = await sb.from('vehicle_models').select('*').eq('is_active', true).order('model_code');
-  if (error) throw error;
+  const { data, error } = await sb.from('vehicle_models').eq('is_active', true).order('model_code')._buildAndFetch();
+  if (error) throw new Error(JSON.stringify(error));
   MODELS = data || [];
   const sel = document.getElementById('vehicle-model');
   sel.innerHTML = '<option value="">— เลือกรุ่นรถ —</option>';
@@ -813,8 +898,8 @@ async function loadModels() {
 }
 
 async function loadProviders() {
-  const { data, error } = await sb.from('finance_providers').select('*').eq('is_active', true).order('provider_code');
-  if (error) throw error;
+  const { data, error } = await sb.from('finance_providers').eq('is_active', true).order('provider_code')._buildAndFetch();
+  if (error) throw new Error(JSON.stringify(error));
   PROVIDERS = data || [];
   const sel = document.getElementById('finance-provider');
   sel.innerHTML = '<option value="">— เลือกบริษัทไฟแนนซ์ —</option>';
@@ -827,10 +912,10 @@ async function loadProviders() {
 }
 
 async function loadPrograms(providerCode = null) {
-  let query = sb.from('finance_programs').select('*').eq('is_active', true).order('program_name');
-  if (providerCode) query = query.eq('provider_code', providerCode);
-  const { data, error } = await query;
-  if (error) throw error;
+  const q = sb.from('finance_programs').eq('is_active', true).order('program_name');
+  if (providerCode) q.eq('provider_code', providerCode);
+  const { data, error } = await q._buildAndFetch();
+  if (error) throw new Error(JSON.stringify(error));
   PROGRAMS = data || [];
   const sel = document.getElementById('finance-program');
   sel.innerHTML = '<option value="">— เลือกโปรแกรม —</option>';
@@ -844,14 +929,14 @@ async function loadPrograms(providerCode = null) {
 }
 
 async function loadCampaigns() {
-  const { data, error } = await sb.from('campaigns').select('*').eq('is_active', true).order('campaign_name');
-  if (error) throw error;
+  const { data, error } = await sb.from('campaigns').eq('is_active', true).order('campaign_name')._buildAndFetch();
+  if (error) throw new Error(JSON.stringify(error));
   CAMPAIGNS_LIST = data || [];
 }
 
 async function loadDropdowns() {
-  const { data, error } = await sb.from('master_options').select('*').eq('is_active', true).order('sort_order');
-  if (error) throw error;
+  const { data, error } = await sb.from('master_options').eq('is_active', true).order('sort_order')._buildAndFetch();
+  if (error) throw new Error(JSON.stringify(error));
   const groups = {};
   (data || []).forEach(o => {
     if (!groups[o.group_code]) groups[o.group_code] = [];
@@ -1130,23 +1215,24 @@ async function saveOrder(status = null) {
   try {
     let result;
     if (CURRENT_SO_ID) {
-      const { data: updated, error } = await sb.from('sales_orders').update(data).eq('id', CURRENT_SO_ID).select().single();
-      if (error) throw error;
-      result = updated;
+      const { data: updated, error } = await sb.from('sales_orders').eq('id', CURRENT_SO_ID).update(data);
+      if (error) throw new Error(JSON.stringify(error));
+      result = Array.isArray(updated) ? updated[0] : updated;
     } else {
       // Generate SO number
       const branch = data.branch_code;
       const saleDate = new Date(data.sale_date);
       const yymm = String(saleDate.getFullYear()).slice(2) + String(saleDate.getMonth()+1).padStart(2,'0');
       const prefix = branch + yymm;
-      const { count } = await sb.from('sales_orders').select('*', {count:'exact',head:true}).like('so_number', prefix+'%');
+      const countRes = await sb.from('sales_orders').like('so_number', prefix+'%')._buildAndFetch();
+      const count = countRes.data?.length || 0;
       const seq = String((count || 0) + 1).padStart(3, '0');
       data.so_number = prefix + seq;
 
-      const { data: inserted, error } = await sb.from('sales_orders').insert(data).select().single();
-      if (error) throw error;
-      result = inserted;
-      CURRENT_SO_ID = result.id;
+      const { data: inserted, error } = await sb.from('sales_orders').insert(data);
+      if (error) throw new Error(JSON.stringify(error));
+      result = Array.isArray(inserted) ? inserted[0] : inserted;
+      CURRENT_SO_ID = result?.id;
     }
 
     // Save campaigns
@@ -1179,7 +1265,7 @@ async function submitForApproval() {
 
 async function saveCampaigns(orderId) {
   // Delete existing
-  await sb.from('sales_order_campaigns').delete().eq('sales_order_id', orderId);
+  await sb.from('sales_order_campaigns').eq('sales_order_id', orderId).delete();
   // Insert new
   const rows = [];
   document.querySelectorAll('#campaign-tbody tr').forEach(tr => {
@@ -1237,7 +1323,8 @@ async function sendToFinance() {
     const today = new Date();
     const yymm = String(today.getFullYear()).slice(2) + String(today.getMonth()+1).padStart(2,'0');
     const prefix = branch + yymm;
-    const { count } = await sb.from('finance_cases').select('*', {count:'exact',head:true}).like('case_id', prefix+'%');
+    const countRes2 = await sb.from('finance_cases').like('case_id', prefix+'%')._buildAndFetch();
+    const count = countRes2.data?.length || 0;
     const seq = String((count || 0) + 1).padStart(3, '0');
     const caseId = prefix + seq;
 
@@ -1276,10 +1363,10 @@ async function sendToFinance() {
     };
 
     const { error } = await sb.from('finance_cases').insert(financeCase);
-    if (error) throw error;
+    if (error) throw new Error(JSON.stringify(error));
 
     // Link back to sales_order
-    await sb.from('sales_orders').update({ finance_case_id: caseId, status: 'FINANCE_PROCESSING' }).eq('id', CURRENT_SO_ID);
+    await sb.from('sales_orders').eq('id', CURRENT_SO_ID).update({ finance_case_id: caseId, status: 'FINANCE_PROCESSING' });
     CURRENT_STATUS = 'FINANCE_PROCESSING';
     updateStatusDisplay({ status: 'FINANCE_PROCESSING', so_number: document.getElementById('so-number-display').textContent });
 
