@@ -309,6 +309,15 @@ tbody tr:last-child{border-bottom:none;}
 }
 .iframe-loading .spinner{width:36px;height:36px;border-width:4px;}
 
+/* STATUS CELLS */
+.sc{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.sc-yes{background:#DCFCE7;color:#15803D;}
+.sc-no{background:#F1F5F9;color:#64748B;}
+.sc-wait{background:#FEF3C7;color:#92400E;}
+.sc-reject{background:#FEE2E2;color:#991B1B;}
+.sc-finance{background:#EDE9FE;color:#6D28D9;}
+.sc dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
 /* PAGINATION */
 .pagination{
   padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
@@ -506,6 +515,9 @@ tbody tr:last-child{border-bottom:none;}
         <button class="tab" data-tab="form" onclick="filterByTab('form')">
           ทำใบคำขอ <span class="tab-count" id="tc-form">0</span>
         </button>
+        <button class="tab" data-tab="listso" onclick="filterByTab('listso')">
+          List ใบคำขอ <span class="tab-count" id="tc-listso">0</span>
+        </button>
         <button class="tab" data-tab="pending" onclick="filterByTab('pending')">
           อนุมัติคำขอ <span class="tab-count" id="tc-pending">0</span>
         </button>
@@ -582,6 +594,36 @@ tbody tr:last-child{border-bottom:none;}
       <div class="pagination">
         <span class="page-info" id="page-info">กำลังโหลด...</span>
         <div class="page-btns" id="page-btns"></div>
+      </div>
+    </div>
+
+    <!-- LIST SO PANEL -->
+    <div id="listso-panel" style="display:none;margin-bottom:20px;">
+      <div class="list-card">
+        <div class="list-header">
+          <span class="list-header-title">📋 List ใบคำขอ — สถานะครบวงจร</span>
+          <button class="btn btn-ghost btn-sm" onclick="loadListSO()">🔄 รีเฟรช</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SO# / ลูกค้า</th>
+                <th>รุ่นรถ</th>
+                <th>สาขา / SC</th>
+                <th>วันที่</th>
+                <th style="text-align:center">อนุมัติ (ผจก.)</th>
+                <th style="text-align:center">ส่งสินเชื่อ</th>
+                <th style="text-align:center">Cashier SO</th>
+                <th>สถานะสินเชื่อ</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="listso-tbody">
+              <tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -700,6 +742,7 @@ function updateTabCounts() {
   const counts = {
     all: ALL_ORDERS.length,
     form: ALL_ORDERS.filter(o => ['DRAFT','RETURNED'].includes(o.status)).length,
+    listso: ALL_ORDERS.length,
     pending: ALL_ORDERS.filter(o => o.status === 'PENDING_APPROVAL').length,
     send: ALL_ORDERS.filter(o => ['APPROVED','SENT_TO_CASHIER','SENT_TO_ADMIN'].includes(o.status)).length,
     finance: ALL_ORDERS.filter(o => ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED'].includes(o.status)).length,
@@ -739,6 +782,114 @@ function getFilteredOrders() {
 
 const FINANCE_URL = 'https://iks-finance.vercel.app';
 let financeLoaded = false;
+
+// ─── LIST SO ───
+const FINANCE_STATUS_TH = {
+  'รับใบคำขอ':          { cls:'sc-wait',    icon:'⏳', label:'รับใบคำขอ' },
+  'ส่ง Finance':        { cls:'sc-finance',  icon:'📤', label:'ส่ง Finance' },
+  'ขอเอกสารเพิ่มเติม': { cls:'sc-wait',    icon:'📋', label:'ขอเอกสาร' },
+  'รอผล':               { cls:'sc-wait',    icon:'⏳', label:'รอผล' },
+  'ปรับเงื่อนไข':       { cls:'sc-wait',    icon:'🔄', label:'ปรับเงื่อนไข' },
+  'อนุมัติ':             { cls:'sc-yes',     icon:'✅', label:'อนุมัติ' },
+  'อนุมัติแบบปรับเงื่อนไข': { cls:'sc-yes', icon:'✅', label:'อนุมัติ (ปรับ)' },
+  'ไม่อนุมัติ':          { cls:'sc-reject',  icon:'❌', label:'ไม่อนุมัติ' },
+};
+
+// Cache finance_cases status
+let FINANCE_CASES_CACHE = {};
+
+async function loadFinanceCases() {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/finance_cases?select=case_id,status&order=created_at.desc`;
+    const res = await fetch(url, { headers: HDR });
+    if (res.ok) {
+      const cases = await res.json();
+      cases.forEach(c => { FINANCE_CASES_CACHE[c.case_id] = c.status; });
+    }
+  } catch(e) { console.error('loadFinanceCases:', e); }
+}
+
+async function loadListSO() {
+  const tbody = document.getElementById('listso-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลด...</td></tr>';
+
+  await loadFinanceCases();
+
+  const orders = ALL_ORDERS.length > 0 ? ALL_ORDERS : getDemoData();
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>ยังไม่มีรายการ</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    // COL 1: อนุมัติ (ผจก.)
+    let approveCell;
+    if (['APPROVED','SENT_TO_CASHIER','SENT_TO_ADMIN','FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED','DELIVERED'].includes(o.status)) {
+      approveCell = `<span class="sc sc-yes">✅ อนุมัติ</span>`;
+    } else if (o.status === 'RETURNED') {
+      approveCell = `<span class="sc sc-reject">❌ ตีกลับ</span>`;
+    } else if (o.status === 'PENDING_APPROVAL') {
+      approveCell = `<span class="sc sc-wait">⏳ รออนุมัติ</span>`;
+    } else {
+      approveCell = `<span class="sc sc-no">— ยังไม่ส่ง</span>`;
+    }
+
+    // COL 2: ส่งสินเชื่อ
+    let financeCell;
+    if (['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED'].includes(o.status)) {
+      financeCell = `<span class="sc sc-yes">✅ ส่งแล้ว</span>`;
+    } else {
+      financeCell = `<span class="sc sc-no">⏳ ยังไม่ส่ง</span>`;
+    }
+
+    // COL 3: Cashier SO
+    let cashierCell;
+    if (o.so_number && ['SENT_TO_CASHIER','SENT_TO_ADMIN','FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED','DELIVERED'].includes(o.status)) {
+      cashierCell = `<span class="sc sc-yes">✅ คีย์แล้ว</span>`;
+    } else {
+      cashierCell = `<span class="sc sc-no">⏳ ยังไม่คีย์</span>`;
+    }
+
+    // Finance status from cache
+    let finStatusCell = '<span class="sc sc-no">—</span>';
+    if (o.finance_case_id && FINANCE_CASES_CACHE[o.finance_case_id]) {
+      const fs = FINANCE_STATUS_TH[FINANCE_CASES_CACHE[o.finance_case_id]] || { cls:'sc-wait', icon:'⏳', label: FINANCE_CASES_CACHE[o.finance_case_id] };
+      finStatusCell = `<span class="sc ${fs.cls}">${fs.icon} ${fs.label}</span>`;
+    }
+
+    const date = formatDate(o.created_at);
+    return `<tr>
+      <td>
+        <div class="so-number">${o.so_number||'#'+o.id}</div>
+        <div class="customer-name" style="font-size:12.5px">${o.customer_name||'—'}</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${o.model_code||'—'}</div>
+        <div style="font-size:11px;color:var(--g500)">${o.vehicle_color||''}</div>
+      </td>
+      <td>
+        <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${o.branch_code||'—'}</div>
+        <div style="font-size:11px;color:var(--g500)">${o.sc_code||''}</div>
+      </td>
+      <td><div class="date-text">${date.d}</div><div class="time-text">${date.t}</div></td>
+      <td style="text-align:center">${approveCell}</td>
+      <td style="text-align:center">${financeCell}</td>
+      <td style="text-align:center">${cashierCell}</td>
+      <td>${finStatusCell}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="action-btn" onclick="viewOrder(${o.id})" title="ดู">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="action-btn primary" onclick="editOrder(${o.id})" title="แก้ไข">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
 
 async function loadFinanceList() {
   const tbody = document.getElementById('finance-list-tbody');
@@ -815,9 +966,23 @@ function filterByTab(tab) {
   document.getElementById('nav-finance')?.classList.toggle('active', tab === 'finance');
 
   const financePanel = document.getElementById('finance-panel');
+  const listsoPanel = document.getElementById('listso-panel');
   const listCard = document.querySelector('.list-card');
   const workflowSection = document.querySelector('.workflow-section');
   const kpiGrid = document.querySelector('.kpi-grid');
+
+  // Hide all panels first
+  if (financePanel) financePanel.classList.remove('active');
+  if (listsoPanel) listsoPanel.style.display = 'none';
+
+  if (tab === 'listso') {
+    listCard.style.display = 'none';
+    if (workflowSection) workflowSection.style.display = 'none';
+    kpiGrid.style.display = 'none';
+    listsoPanel.style.display = 'block';
+    loadListSO();
+    return;
+  }
 
   if (tab === 'finance') {
     // Show finance iframe — sidebar stays (it's position:fixed)
@@ -839,7 +1004,6 @@ function filterByTab(tab) {
     }
   } else {
     // Show normal list
-    financePanel.classList.remove('active');
     listCard.style.display = 'block';
     if (workflowSection) workflowSection.style.display = 'block';
     kpiGrid.style.display = 'grid';
