@@ -302,7 +302,7 @@ tbody tr:last-child{border-bottom:none;}
   background:rgba(255,255,255,.1);transition:background .15s;font-family:var(--font);
 }
 .iframe-btn:hover{background:rgba(255,255,255,.2);}
-.finance-iframe{width:100%;height:calc(100vh - 220px);min-height:600px;border:none;display:block;}
+.finance-iframe{width:100%;height:calc(100vh - 140px);min-height:600px;border:none;display:block;}
 .iframe-loading{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   height:400px;gap:16px;color:var(--g500);
@@ -386,7 +386,7 @@ tbody tr:last-child{border-bottom:none;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span>ทำใบคำขอ</span>
     </a>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="#" onclick="event.preventDefault();filterByTab('finance')" id="nav-finance">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span>ทำใบขอสินเชื่อ</span>
     </a>
@@ -646,10 +646,17 @@ async function loadOrders() {
     updateKPIs();
     updateTabCounts();
     renderTable();
-    showToast(`โหลด ${ALL_ORDERS.length} รายการ ✅`, 'success');
+    if (ALL_ORDERS.length === 0) {
+      ALL_ORDERS = getDemoData();
+      showToast('ยังไม่มีข้อมูลใบขาย — แสดงตัวอย่าง Demo', 'info');
+    } else {
+      showToast(`โหลด ${ALL_ORDERS.length} รายการ ✅`, 'success');
+    }
+    updateKPIs();
+    updateTabCounts();
+    renderTable();
   } catch(e) {
     console.error(e);
-    // Show demo data if Supabase fails
     ALL_ORDERS = getDemoData();
     updateKPIs();
     updateTabCounts();
@@ -739,6 +746,8 @@ function filterByTab(tab) {
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
+  // Highlight sidebar for finance tab
+  document.getElementById('nav-finance')?.classList.toggle('active', tab === 'finance');
 
   const financePanel = document.getElementById('finance-panel');
   const listCard = document.querySelector('.list-card');
@@ -746,17 +755,21 @@ function filterByTab(tab) {
   const kpiGrid = document.querySelector('.kpi-grid');
 
   if (tab === 'finance') {
-    // Show finance iframe
+    // Show finance iframe — sidebar stays (it's position:fixed)
     financePanel.classList.add('active');
     listCard.style.display = 'none';
     if (workflowSection) workflowSection.style.display = 'none';
     kpiGrid.style.display = 'none';
 
-    // Load iframe only once
+    // Load iframe
+    const iframe = document.getElementById('finance-iframe');
     if (!financeLoaded) {
-      const iframe = document.getElementById('finance-iframe');
-      iframe.src = FINANCE_URL;
       financeLoaded = true;
+      iframe.src = FINANCE_URL;
+    } else {
+      // Already loaded — just make sure it's visible
+      document.getElementById('iframe-loading').style.display = 'none';
+      iframe.style.display = 'block';
     }
   } else {
     // Show normal list
