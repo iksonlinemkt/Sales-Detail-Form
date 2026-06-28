@@ -395,6 +395,10 @@ tbody tr:last-child{border-bottom:none;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span>ทำใบคำขอ</span>
     </a>
+    <a class="nav-item" href="#" onclick="event.preventDefault();filterByTab('listso')" id="nav-listso">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>List ใบคำขอ</span>
+    </a>
     <a class="nav-item" href="#" onclick="event.preventDefault();filterByTab('finance')" id="nav-finance">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span>ทำใบขอสินเชื่อ</span>
@@ -962,8 +966,9 @@ function filterByTab(tab) {
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
-  // Highlight sidebar for finance tab
+  // Highlight sidebar for finance/listso tab
   document.getElementById('nav-finance')?.classList.toggle('active', tab === 'finance');
+  document.getElementById('nav-listso')?.classList.toggle('active', tab === 'listso');
 
   const financePanel = document.getElementById('finance-panel');
   const listsoPanel = document.getElementById('listso-panel');
