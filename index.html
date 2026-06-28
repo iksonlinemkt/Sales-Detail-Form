@@ -337,9 +337,9 @@ textarea{resize:vertical;min-height:60px;}
       <select id="ps-bk" class="sd-hidden"><option value="PS">PS</option><option value="BK">BK</option></select>
       <div class="sd-wrap" id="sd-ps-bk"></div>
     </div>
-    <div class="field-group" id="ref-number-group" style="display:none">
+    <div class="field-group" id="ref-number-group">
       <label>เลขที่อ้างอิง (12 หลัก)</label>
-      <input type="text" id="ref-number" maxlength="12" placeholder="000000000000" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      <input type="text" id="ref-number" maxlength="12" placeholder="กรอกเลขที่อ้างอิง" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
     </div>
     <div class="field-group">
       <label>สถานะ</label>
@@ -546,7 +546,7 @@ textarea{resize:vertical;min-height:60px;}
           </div>
           <div class="field-group">
             <label>ลด CRP <span class="auto-badge">แคมเปญ</span></label>
-            <div class="input-addon"><input type="number" id="crp-discount" value="0" onchange="calcAll()" min="0" style="color:var(--red);font-weight:600"><span class="addon">บาท</span></div>
+            <div class="input-addon"><input type="number" id="crp-discount" value="0" readonly style="color:var(--red);font-weight:600;background:var(--red-bg)"><span class="addon">บาท</span></div>
           </div>
         </div>
         <div class="field-row cols-2">
@@ -561,7 +561,7 @@ textarea{resize:vertical;min-height:60px;}
         </div>
         <div class="field-group">
           <label>ลดดาวน์ <span class="auto-badge">แคมเปญ</span></label>
-          <div class="input-addon"><input type="number" id="down-discount" value="0" onchange="calcAll()" min="0" style="color:var(--green);font-weight:600"><span class="addon">บาท</span></div>
+          <div class="input-addon"><input type="number" id="down-discount" value="0" readonly style="color:var(--green);font-weight:600;background:var(--green-bg)"><span class="addon">บาท</span></div>
         </div>
         <div class="field-group" style="margin-top:8px">
           <label>ราคาเปิดใบเสร็จ <span class="auto-badge">AUTO</span></label>
@@ -592,18 +592,20 @@ textarea{resize:vertical;min-height:60px;}
             <div class="input-addon"><input type="number" id="table-rate" value="3.05" step="0.01" onchange="calcAll()" min="0" max="100"><span class="addon">%</span></div>
           </div>
         </div>
-        <div class="rate-grid">
+        <div class="field-row cols-2">
           <div class="field-group">
             <label>ขอลด ดบ.</label>
-            <div class="input-addon"><input type="number" id="rate-discount" value="0" step="0.01" onchange="calcAll()" min="0"><span class="addon">%</span></div>
+            <select id="rate-discount" onchange="calcAll()">
+              <option value="0">ไม่ลด (0.00%)</option>
+              <option value="0.10">10 สตางค์ (0.10%)</option>
+              <option value="0.20">20 สตางค์ (0.20%)</option>
+              <option value="0.30">30 สตางค์ (0.30%)</option>
+              <option value="0.40">40 สตางค์ (0.40%)</option>
+            </select>
           </div>
           <div class="field-group">
             <label>ดบ.ใช้จริง <span class="auto-badge">AUTO</span></label>
             <div class="display-value blue" id="actual-rate-display">—</div>
-          </div>
-          <div class="field-group">
-            <label>ดบ.ลด ต.ม.</label>
-            <div class="display-value" id="rate-monthly-display">—</div>
           </div>
         </div>
         <div class="field-row cols-2">
@@ -651,6 +653,7 @@ textarea{resize:vertical;min-height:60px;}
           <div class="cost-item"><span class="label">ประกัน</span><div class="input-addon" style="max-width:130px"><input type="number" id="insurance-amount" value="0" onchange="calcAll()" min="0" style="padding:4px 6px;font-size:12px"><span class="addon" style="font-size:11px">บาท</span></div></div>
           <div class="cost-item"><span class="label">ทะเบียน</span><div class="input-addon" style="max-width:130px"><input type="number" id="registration-amount" value="0" onchange="calcAll()" min="0" style="padding:4px 6px;font-size:12px"><span class="addon" style="font-size:11px">บาท</span></div></div>
           <div class="cost-item"><span class="label">ตู้/หลังคา/แม็กซ์</span><span class="amount" id="cost-body-acc">—</span></div>
+          <div class="cost-item"><span class="label">อุปกรณ์ขายเพิ่มเติม <span class="auto-badge">AUTO</span></span><span class="amount" id="cost-addon-total">—</span></div>
           <div class="cost-item"><span class="label">อื่นๆ</span><div class="input-addon" style="max-width:130px"><input type="number" id="other-amount" value="0" onchange="calcAll()" min="0" style="padding:4px 6px;font-size:12px"><span class="addon" style="font-size:11px">บาท</span></div></div>
           <div class="cost-item"><span class="label">มัดจำป้ายแดง</span><div class="input-addon" style="max-width:130px"><input type="number" id="plate-deposit" value="0" onchange="calcAll()" min="0" style="padding:4px 6px;font-size:12px"><span class="addon" style="font-size:11px">บาท</span></div></div>
           <div class="cost-item"><span class="label">ภาษี Subdown 5%</span><span class="amount" id="cost-tax-subdown">—</span></div>
@@ -658,6 +661,9 @@ textarea{resize:vertical;min-height:60px;}
           <div class="cost-item deduct-row"><span class="label">หัก เงินจอง</span><span class="amount" id="cost-booking-deduct">—</span></div>
           <div class="cost-item deduct-row"><span class="label">Subdown</span><span class="amount" id="cost-subdown-deduct">—</span></div>
           <div class="cost-item deduct-row"><span class="label">ลดดาวน์ (จากแคมเปญ)</span><span class="amount" id="cost-down-discount" style="color:var(--green)">—</span></div>
+          <div class="cost-item deduct-row" id="cost-ins-discount-row" style="display:none"><span class="label">ส่วนลดประกัน (จากแคมเปญ)</span><span class="amount" id="cost-ins-discount" style="color:var(--green)">—</span></div>
+          <div class="cost-item deduct-row" id="cost-reg-discount-row" style="display:none"><span class="label">ส่วนลดทะเบียน (จากแคมเปญ)</span><span class="amount" id="cost-reg-discount" style="color:var(--green)">—</span></div>
+          <div class="cost-item deduct-row" id="cost-acc-discount-row" style="display:none"><span class="label">ลดอุปกรณ์ (จากแคมเปญ)</span><span class="amount" id="cost-acc-discount" style="color:var(--green)">—</span></div>
           <div class="cost-item net-row"><span class="label">สรุปค่าใช้จ่าย ณ วันออกรถ</span><span class="amount" id="cost-net">—</span></div>
         </div>
         <p class="note-text">***คำอธิบายเพิ่มเติมเฉพาะบัตรกำนัลที่มีเงื่อนไขแถมประกัน หรือ ดบพิเศษ***</p>
@@ -1052,7 +1058,12 @@ async function loadDropdowns() {
   });
 
   // Searchable dropdowns from DB groups
-  buildSD('sd-ps-bk',        'ps-bk',         groups['PS_BK']            || [], '— เลือก —', () => onPsBkChange(document.getElementById('ps-bk').value), 'PS');
+  // PS/BK — ใช้ hardcode เสมอ (ข้อมูลไม่เปลี่ยน)
+  const psBkOpts = [{ option_code:'PS', option_name:'PS' }, { option_code:'BK', option_name:'BK' }];
+  buildSD('sd-ps-bk', 'ps-bk', psBkOpts, '— เลือก —', () => onPsBkChange(document.getElementById('ps-bk').value), 'PS');
+  // แสดง ref field ทันที (ไม่ต้อง toggle — เห็นตลอด)
+  const refGroup = document.getElementById('ref-number-group');
+  if (refGroup) refGroup.style.display = 'block';
   buildSD('sd-sale-type',    'sale-type',      groups['SALE_TYPE']        || [], '— เลือก —', onSaleTypeChange);
   buildSD('sd-payment-cond', 'payment-cond',   groups['PAYMENT_CONDITION']|| [], '— เลือก —');
   buildSD('sd-body-color',   'body-color',     groups['BODY_COLOR']       || [], '— เลือก —');
@@ -1232,7 +1243,7 @@ function calcAll() {
   const down = n('down-payment');
   const bookingAmt = n('booking-amount');
   const tableRate = n('table-rate') / 100;
-  const rateDiscount = n('rate-discount') / 100;
+  const rateDiscount = parseFloat(document.getElementById('rate-discount')?.value || 0) / 100;
   const termYears = parseInt(document.getElementById('term-years')?.value || 5);
   const termMonths = termYears * 12;
   const insurance = n('insurance-amount');
@@ -1251,8 +1262,21 @@ function calcAll() {
   const monthlyPayment = termMonths > 0 && financeAmount > 0
     ? (financeAmount * (1 + actualRate * termYears)) / termMonths : 0;
   const taxSubdown = subDown * 0.05;
-  const costTotal = down + insurance + registration + bodyAcc + otherCost + plateDeposit + taxSubdown;
-  const netExpense = costTotal - bookingAmt - subDown - downDiscount;
+
+  // อุปกรณ์ขายเพิ่มเติม total
+  let addonTotal = 0;
+  document.querySelectorAll('#addon-tbody tr').forEach(tr => {
+    const inp = tr.querySelector('input[type=number]');
+    addonTotal += parseFloat(inp?.value) || 0;
+  });
+
+  // Campaign discounts on costs
+  const insDiscount = window._campaignInsDiscount || 0;
+  const regDiscount = window._campaignRegDiscount || 0;
+  const accDiscount = window._campaignAccDiscount || 0;
+
+  const costTotal = down + insurance + registration + bodyAcc + addonTotal + otherCost + plateDeposit + taxSubdown;
+  const netExpense = costTotal - bookingAmt - subDown - downDiscount - insDiscount - regDiscount - accDiscount;
 
   // Update hidden invoice field
   const invEl = document.getElementById('invoice-amount');
@@ -1263,7 +1287,6 @@ function calcAll() {
   setText('finance-amount-display', financeAmount > 0 ? fmt(financeAmount) : '—');
   setText('down-pct-display', downPct > 0 ? (downPct*100).toFixed(2)+'%' : '—');
   setText('actual-rate-display', actualRate > 0 ? (actualRate*100).toFixed(2)+'%' : '—');
-  setText('rate-monthly-display', actualRate > 0 ? ((actualRate*100)/12).toFixed(3)+'%' : '—');
   setText('term-display', termMonths+' งวด');
   setText('monthly-payment-display', monthlyPayment > 0 ? fmt(monthlyPayment) : '—');
 
@@ -1271,6 +1294,7 @@ function calcAll() {
   setText('cost-down', down > 0 ? fmt(down) : '—');
   document.getElementById('cost-down-pct').textContent = downPct > 0 ? `(${(downPct*100).toFixed(1)}%)` : '';
   setText('cost-body-acc', bodyAcc > 0 ? fmt(bodyAcc) : '-');
+  setText('cost-addon-total', addonTotal > 0 ? fmt(addonTotal) : '-');
   setText('cost-tax-subdown', taxSubdown > 0 ? fmt(taxSubdown) : '-');
   setText('cost-total', fmt(costTotal));
   setText('cost-booking-deduct', bookingAmt > 0 ? fmt(bookingAmt) : '-');
@@ -1636,20 +1660,41 @@ function syncCampaignToFields(tr) {
 }
 
 function syncAllCampaigns() {
-  let totalCrpDiscount = 0;
-  let totalDownDiscount = 0;
+  let totalCrpDiscount = 0, totalDownDiscount = 0;
+  let totalInsDiscount = 0, totalRegDiscount = 0, totalAccDiscount = 0;
+
   document.querySelectorAll('#campaign-tbody tr').forEach(tr => {
     const sels = tr.querySelectorAll('select');
     const inp = tr.querySelector('input[type=number]');
     const actionType = sels[1]?.value || '';
     const amount = parseFloat(inp?.value) || 0;
-    if (actionType === 'REDUCE_CRP') totalCrpDiscount += amount;
+    if (actionType === 'REDUCE_CRP')  totalCrpDiscount  += amount;
     if (actionType === 'REDUCE_DOWN') totalDownDiscount += amount;
+    if (actionType === 'SWAP_INS')    totalInsDiscount  += amount;
+    if (actionType === 'REDUCE_REG')  totalRegDiscount  += amount;
+    if (actionType === 'REDUCE_ACC')  totalAccDiscount  += amount;
   });
-  const crpEl = document.getElementById('crp-discount');
-  const downEl = document.getElementById('down-discount');
-  if (crpEl) crpEl.value = totalCrpDiscount;
-  if (downEl) downEl.value = totalDownDiscount;
+
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
+  set('crp-discount',  totalCrpDiscount);
+  set('down-discount', totalDownDiscount);
+
+  // Show/hide campaign discount rows in cost section
+  const showRow = (rowId, amtId, amount) => {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    row.style.display = amount > 0 ? 'flex' : 'none';
+    setText(amtId, amount > 0 ? fmt(amount) : '—');
+  };
+  showRow('cost-ins-discount-row', 'cost-ins-discount', totalInsDiscount);
+  showRow('cost-reg-discount-row', 'cost-reg-discount', totalRegDiscount);
+  showRow('cost-acc-discount-row', 'cost-acc-discount', totalAccDiscount);
+
+  // Store for calcAll
+  window._campaignInsDiscount = totalInsDiscount;
+  window._campaignRegDiscount = totalRegDiscount;
+  window._campaignAccDiscount = totalAccDiscount;
+
   calcAll();
 }
 
