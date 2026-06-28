@@ -735,29 +735,39 @@ textarea{resize:vertical;min-height:60px;}
   </div>
   <div class="action-bar-right">
     <button class="btn btn-ghost" onclick="window.print()">🖨️ พิมพ์ใบขาย</button>
-    <button class="btn btn-finance" id="btn-send-finance" onclick="showFinanceModal()" style="display:none">
-      📤 ส่งสินเชื่อ → Finance App
-    </button>
     <button class="btn btn-success" id="btn-submit" onclick="submitForApproval()">📨 ส่งขออนุมัติ</button>
+    <button class="btn btn-finance" id="btn-send-finance" onclick="showFinanceModal()">
+      🏦 ส่งสินเชื่อ
+    </button>
     <button class="btn btn-primary" id="btn-save" onclick="saveOrder()">✅ บันทึกข้อมูล</button>
   </div>
 </div>
 
 <!-- FINANCE MODAL -->
 <div id="finance-modal" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <div class="modal-title">📤 ส่งข้อมูลไป Finance App</div>
-    <div class="modal-desc">
-      ระบบจะสร้าง Case สินเชื่อใหม่ใน <strong>IKS Finance App</strong> โดยใช้ข้อมูลจากใบขายนี้<br><br>
-      <strong>ข้อมูลที่จะส่ง:</strong><br>
-      • ชื่อลูกค้า / เบอร์โทร<br>
-      • รุ่นรถ / ราคา / ดาวน์ / ยอดจัด<br>
-      • บริษัทไฟแนนซ์ / ดอกเบี้ย / จำนวนงวด<br>
-      • ผ่อนต่อเดือน
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-title">🏦 ยืนยันส่งข้อมูลสินเชื่อ</div>
+    <div class="modal-desc" style="margin-bottom:0">
+      ระบบจะสร้าง Case สินเชื่อใหม่ใน <strong>IKS Finance App</strong> โดยใช้ข้อมูลจากใบขายนี้
     </div>
+    <div id="finance-preview" style="margin:16px 0;background:#f8f9fa;border-radius:8px;padding:14px;font-size:13px;line-height:2;border:1px solid #dee2e6;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">
+        <div><span style="color:#6c757d">ลูกค้า:</span> <strong id="fp-customer">—</strong></div>
+        <div><span style="color:#6c757d">ไฟแนนซ์:</span> <strong id="fp-provider">—</strong></div>
+        <div><span style="color:#6c757d">รุ่นรถ:</span> <strong id="fp-model">—</strong></div>
+        <div><span style="color:#6c757d">สี:</span> <strong id="fp-color">—</strong></div>
+        <div><span style="color:#6c757d">ราคา CRP:</span> <strong id="fp-crp" style="color:#1565C0">—</strong></div>
+        <div><span style="color:#6c757d">ยอดจัด:</span> <strong id="fp-finance" style="color:#b91c1c">—</strong></div>
+        <div><span style="color:#6c757d">เงินดาวน์:</span> <strong id="fp-down">—</strong></div>
+        <div><span style="color:#6c757d">ผ่อน/เดือน:</span> <strong id="fp-monthly" style="color:#b91c1c">—</strong></div>
+        <div><span style="color:#6c757d">จำนวนงวด:</span> <strong id="fp-term">—</strong></div>
+        <div><span style="color:#6c757d">ดบ.ใช้จริง:</span> <strong id="fp-rate">—</strong></div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:#d97706;margin-bottom:12px;">⚠️ เมื่อส่งแล้วสถานะจะเปลี่ยนเป็น "ส่งสินเชื่อแล้ว" และไม่สามารถแก้ไขได้</div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeFinanceModal()">ยกเลิก</button>
-      <button class="btn btn-finance" onclick="sendToFinance()">✅ ยืนยันส่งสินเชื่อ</button>
+      <button class="btn btn-finance" onclick="sendToFinance()">🏦 ยืนยันส่งสินเชื่อ</button>
     </div>
   </div>
 </div>
@@ -1525,7 +1535,37 @@ async function saveCampaigns(orderId) {
 // ============================================================
 // SEND TO FINANCE
 // ============================================================
-function showFinanceModal() { document.getElementById('finance-modal').style.display = 'flex'; }
+function showFinanceModal() {
+  // Pre-fill preview
+  const modelOpt = document.getElementById('vehicle-model').selectedOptions[0];
+  const colorSel = document.getElementById('vehicle-color');
+  const colorOpt = colorSel.selectedOptions[0];
+  const termYears = parseInt(document.getElementById('term-years').value || 5);
+  const invoice = Math.max(0, n('crp-amount') - n('crp-discount') + n('sub-down') + n('body-acc-amount'));
+  const down = n('down-payment');
+  const downDiscount = n('down-discount');
+  const subDown = n('sub-down');
+  const tableRate = parseFloat(document.getElementById('rate-discount')?.value || 0);
+  const actualRate = Math.max(0, n('table-rate') - tableRate);
+  const financeAmount = Math.max(0, invoice - down - downDiscount - subDown);
+  const monthly = termYears > 0 && financeAmount > 0
+    ? (financeAmount * (1 + (actualRate/100) * termYears)) / (termYears * 12) : 0;
+  const providerSel = document.getElementById('finance-provider');
+
+  const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  setText('fp-customer', document.getElementById('customer-name').value || '— ยังไม่กรอก —');
+  setText('fp-provider', providerSel.selectedOptions[0]?.textContent?.split(' - ')[1] || '— ยังไม่เลือก —');
+  setText('fp-model', modelOpt?.value ? `${modelOpt.value} - ${modelOpt.dataset.name||''}` : '— ยังไม่เลือก —');
+  setText('fp-color', colorOpt?.value ? colorOpt.textContent : '—');
+  setText('fp-crp', n('crp-amount') > 0 ? '฿'+n('crp-amount').toLocaleString('th-TH') : '—');
+  setText('fp-finance', financeAmount > 0 ? '฿'+financeAmount.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—');
+  setText('fp-down', down > 0 ? '฿'+down.toLocaleString('th-TH') : '—');
+  setText('fp-monthly', monthly > 0 ? '฿'+monthly.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—');
+  setText('fp-term', termYears > 0 ? `${termYears} ปี (${termYears*12} งวด)` : '—');
+  setText('fp-rate', actualRate > 0 ? actualRate.toFixed(2)+'%' : '—');
+
+  document.getElementById('finance-modal').style.display = 'flex';
+}
 function closeFinanceModal() { document.getElementById('finance-modal').style.display = 'none'; }
 
 async function sendToFinance() {
@@ -1564,38 +1604,41 @@ async function sendToFinance() {
     const seq = String((count || 0) + 1).padStart(3, '0');
     const caseId = prefix + seq;
 
+    const colorSel = document.getElementById('vehicle-color');
+    const colorOpt = colorSel.selectedOptions[0];
+    const colorName = colorOpt?.textContent?.split(' - ')[1] || colorOpt?.value || '';
     const financeCase = {
-      case_id: caseId,
-      submit_date: today.toISOString().split('T')[0],
-      branch: branch,
-      sales_code: scCode,
-      sales_name: scName === '—' ? '' : scName,
-      fin_code: providerCode,
-      fin_name: PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode,
-      customer_name: document.getElementById('customer-name').value.trim(),
-      customer_phone: document.getElementById('customer-mobile').value.trim(),
-      model_no: modelOpt?.value || '',
-      selling_name: modelOpt?.dataset?.name || '',
-      car_color: document.getElementById('vehicle-color').value,
-      car_price: n('crp-amount'),
-      equipment: bodyAcc,
-      sub_down_add: 0,
-      discount_crp: 0,
-      total_car_price: invoice + bodyAcc,
-      down_real: down,
-      discount_down: 0,
-      discount_sub_down: subDown,
-      total_down: down + subDown,
-      finance_amount: financeAmount,
-      interest: tableRate,
-      interest_discount: rateDiscount,
-      real_interest: actualRate,
-      term: termYears * 12,
-      installment: monthlyPayment,
-      occupation: document.getElementById('occupation').value || '',
-      note: document.getElementById('finance-note').value || '',
-      status: 'รับใบคำขอ',
-      round: 1,
+      case_id:        caseId,
+      branch:         branch,
+      sales_code:     scCode,
+      customer_name:  document.getElementById('customer-name').value.trim(),
+      phone:          document.getElementById('customer-mobile').value.trim(),
+      finance_company: PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode,
+      model:          modelOpt?.value || '',
+      color:          colorName,
+      car_price:      n('crp-amount'),
+      accessories:    bodyAcc,
+      sub_down_add:   subDown,
+      crp_discount:   crpDiscount,
+      down_payment:   down,
+      down_discount:  downDiscount,
+      sub_down_reduce: 0,
+      installments:   termYears * 12,
+      interest_rate:  tableRate,
+      interest_disc:  rateDiscount,
+      insurance:      document.getElementById('finance-program').selectedOptions[0]?.textContent || '',
+      campaign:       (() => {
+        const camps = [];
+        document.querySelectorAll('#campaign-tbody tr').forEach(tr => {
+          const s = tr.querySelectorAll('select');
+          if (s[0]?.value) camps.push(s[0].selectedOptions[0]?.textContent || '');
+        });
+        return camps.join(', ');
+      })(),
+      occupation:     document.getElementById('occupation').value || '',
+      sales_order:    document.getElementById('so-number-display').textContent?.slice(0,10) || '',
+      status:         'รับใบคำขอ',
+      version:        1,
     };
 
     await dbInsert('finance_cases', financeCase);
@@ -1617,12 +1660,28 @@ async function sendToFinance() {
 // ============================================================
 // UI HELPERS
 // ============================================================
+const STATUS_LABELS = {
+  DRAFT: 'แบบร่าง',
+  PENDING_APPROVAL: 'รออนุมัติ',
+  APPROVED: 'อนุมัติแล้ว',
+  RETURNED: 'ตีกลับ',
+  SENT_TO_CASHIER: 'ส่งแคชเชียร์แล้ว',
+  SENT_TO_ADMIN: 'ส่ง Admin แล้ว',
+  FINANCE_PROCESSING: '🏦 ส่งสินเชื่อแล้ว',
+  FINANCE_APPROVED: '✅ สินเชื่ออนุมัติ',
+  FINANCE_REJECTED: '❌ สินเชื่อปฏิเสธ',
+  DELIVERED: '🚗 ออกรถแล้ว',
+};
 function updateStatusDisplay(order) {
   document.getElementById('so-number-display').textContent = order.so_number || '—';
   document.getElementById('so-badge').textContent = order.so_number || 'Auto SO#';
   const pill = document.getElementById('status-pill');
-  pill.textContent = order.status;
+  pill.textContent = STATUS_LABELS[order.status] || order.status;
   pill.className = `status-pill status-${order.status}`;
+  // แสดง/ซ่อนปุ่มส่งสินเชื่อตามสถานะ
+  const financeBtn = document.getElementById('btn-send-finance');
+  const doneStatuses = ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED','DELIVERED'];
+  if (financeBtn) financeBtn.disabled = doneStatuses.includes(order.status);
 }
 
 function toggleSection(header) {
