@@ -193,6 +193,52 @@ textarea{resize:vertical;min-height:60px;}
   .field-row.cols-4,.field-row.cols-5{grid-template-columns:1fr 1fr;}
   .rate-grid{grid-template-columns:1fr 1fr;}
 }
+
+/* SEARCHABLE DROPDOWN */
+.sd-wrap { position:relative; width:100%; }
+.sd-input {
+  width:100%; padding:8px 30px 8px 10px; font-size:13px; font-family:var(--font);
+  border:1.5px solid var(--border); border-radius:6px; background:var(--white);
+  color:var(--gray-800); outline:none; cursor:pointer;
+  transition:border-color .15s, box-shadow .15s;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.sd-input:focus { border-color:var(--blue-bright); box-shadow:0 0 0 3px rgba(25,118,210,.12); }
+.sd-arrow {
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  pointer-events:none; color:var(--gray-600); font-size:11px;
+}
+.sd-dropdown {
+  position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:9000;
+  background:white; border:1.5px solid var(--blue-bright); border-radius:8px;
+  box-shadow:0 8px 24px rgba(15,42,74,.18); display:none; overflow:hidden;
+}
+.sd-dropdown.open { display:block; }
+.sd-search {
+  padding:8px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:6px;
+}
+.sd-search input {
+  flex:1; border:1.5px solid var(--border); border-radius:5px;
+  padding:5px 8px; font-size:12px; font-family:var(--font); outline:none;
+}
+.sd-search input:focus { border-color:var(--blue-bright); }
+.sd-list { max-height:220px; overflow-y:auto; }
+.sd-item {
+  padding:8px 12px; font-size:13px; cursor:pointer;
+  transition:background .1s; border-bottom:1px solid var(--gray-100);
+}
+.sd-item:last-child { border-bottom:none; }
+.sd-item:hover { background:var(--sky); color:var(--blue); }
+.sd-item.selected { background:var(--sky); color:var(--blue); font-weight:600; }
+.sd-item.group-header {
+  padding:5px 12px; font-size:10px; font-weight:700; color:var(--gray-600);
+  background:var(--gray-100); cursor:default; text-transform:uppercase; letter-spacing:.5px;
+}
+.sd-item.group-header:hover { background:var(--gray-100); color:var(--gray-600); }
+.sd-empty { padding:12px; text-align:center; font-size:12px; color:var(--gray-600); }
+/* hidden real select for form collect */
+.sd-hidden { display:none; }
 </style>
 </head>
 <body>
@@ -270,10 +316,8 @@ textarea{resize:vertical;min-height:60px;}
   </div>
   <div class="field-group">
     <label>PS/BK</label>
-    <select id="ps-bk">
-      <option value="PS">PS</option>
-      <option value="BK">BK</option>
-    </select>
+    <select id="ps-bk" class="sd-hidden"><option value="PS">PS</option><option value="BK">BK</option></select>
+    <div class="sd-wrap" id="sd-ps-bk"></div>
   </div>
   <div class="field-group">
     <label>&nbsp;</label>
@@ -316,13 +360,8 @@ textarea{resize:vertical;min-height:60px;}
       <div class="field-group"><label>อำเภอ/เขต</label><input type="text" id="district"></div>
       <div class="field-group">
         <label>จังหวัด</label>
-        <select id="province">
-          <option value="">— เลือก —</option>
-          <option>กรุงเทพมหานคร</option><option>นนทบุรี</option><option>ปทุมธานี</option>
-          <option>สมุทรปราการ</option><option>สมุทรสาคร</option><option>นครปฐม</option>
-          <option>ชลบุรี</option><option>ระยอง</option><option>พระนครศรีอยุธยา</option>
-          <option>เชียงใหม่</option><option>ขอนแก่น</option><option>อื่นๆ</option>
-        </select>
+        <select id="province" class="sd-hidden"><option value="">— เลือก —</option></select>
+        <div class="sd-wrap" id="sd-province"></div>
       </div>
       <div class="field-group"><label>รหัสไปรษณีย์</label><input type="text" id="postal" maxlength="5"></div>
     </div>
@@ -376,10 +415,8 @@ textarea{resize:vertical;min-height:60px;}
     <div class="field-row cols-3">
       <div class="field-group">
         <label>ประเภทการขาย <span class="req">*</span></label>
-        <select id="sale-type" onchange="onSaleTypeChange()">
-          <option value="finance">จัดไฟแนนซ์</option>
-          <option value="cash">ซื้อสด</option>
-        </select>
+        <select id="sale-type" class="sd-hidden"><option value="FINANCE">จัดไฟแนนซ์</option><option value="CASH">ซื้อสด</option></select>
+        <div class="sd-wrap" id="sd-sale-type"></div>
       </div>
       <div class="field-group" id="fp-group">
         <label>บริษัทไฟแนนซ์ <span class="req">*</span></label>
@@ -389,7 +426,8 @@ textarea{resize:vertical;min-height:60px;}
       </div>
       <div class="field-group">
         <label>เงื่อนไขการผ่อน</label>
-        <select id="payment-cond"><option value="end">ปลายงวด</option><option value="start">ต้นงวด</option></select>
+        <select id="payment-cond" class="sd-hidden"><option value="END">ปลายงวด</option><option value="START">ต้นงวด</option></select>
+        <div class="sd-wrap" id="sd-payment-cond"></div>
       </div>
     </div>
     <div class="field-row cols-2-1" id="fp-program-row">
@@ -434,12 +472,8 @@ textarea{resize:vertical;min-height:60px;}
       </div>
       <div class="field-group">
         <label>เหตุผลแก้ไข</label>
-        <select id="edit-reason">
-          <option value="">— ระบุ (ถ้ามี) —</option>
-          <option>แก้ไขดาวน์</option><option>แก้ไขดอกเบี้ย</option>
-          <option>แก้ไขรุ่น/สี</option><option>แก้ไขราคา</option>
-          <option>แก้ไขไฟแนนซ์</option><option>อื่นๆ</option>
-        </select>
+        <select id="edit-reason" class="sd-hidden"><option value="">— ระบุ (ถ้ามี) —</option></select>
+        <div class="sd-wrap" id="sd-edit-reason"></div>
       </div>
     </div>
   </div>
@@ -468,9 +502,8 @@ textarea{resize:vertical;min-height:60px;}
       </div>
       <div class="field-group">
         <label>สีภายในโบดี้</label>
-        <select id="body-color">
-          <option>สีดำ</option><option>สีเทา</option><option>สีครีม</option>
-        </select>
+        <select id="body-color" class="sd-hidden"><option value="">— เลือก —</option></select>
+        <div class="sd-wrap" id="sd-body-color"></div>
       </div>
     </div>
     <div class="field-row cols-2">
@@ -559,12 +592,8 @@ textarea{resize:vertical;min-height:60px;}
         <div class="field-row cols-2">
           <div class="field-group">
             <label>ระยะเวลา (ปี) <span class="req">*</span></label>
-            <select id="term-years" onchange="calcAll()">
-              <option value="1">1 ปี (12 งวด)</option><option value="2">2 ปี (24 งวด)</option>
-              <option value="3">3 ปี (36 งวด)</option><option value="4">4 ปี (48 งวด)</option>
-              <option value="5" selected>5 ปี (60 งวด)</option><option value="6">6 ปี (72 งวด)</option>
-              <option value="7">7 ปี (84 งวด)</option><option value="8">8 ปี (96 งวด)</option>
-            </select>
+            <select id="term-years" class="sd-hidden"><option value="5">5 ปี (60 งวด)</option></select>
+            <div class="sd-wrap" id="sd-term-years"></div>
           </div>
           <div class="field-group">
             <label>ผ่อนต่อเดือน <span class="auto-badge">AUTO</span></label>
@@ -978,16 +1007,18 @@ async function loadDropdowns() {
     if (!groups[o.group_code]) groups[o.group_code] = [];
     groups[o.group_code].push(o);
   });
-  const map = {
+
+  // Simple native selects
+  const simpleMap = {
     'CUSTOMER_STATUS': 'customer-status',
-    'LEAD_SOURCE': 'lead-source',
-    'PURCHASE_TYPE': 'purchase-type',
-    'MARITAL_STATUS': 'marital-status',
-    'OCCUPATION': 'occupation',
-    'INCOME_RANGE': 'income-range',
-    'RESIDENCE_TYPE': 'residence-type',
+    'LEAD_SOURCE':     'lead-source',
+    'PURCHASE_TYPE':   'purchase-type',
+    'MARITAL_STATUS':  'marital-status',
+    'OCCUPATION':      'occupation',
+    'INCOME_RANGE':    'income-range',
+    'RESIDENCE_TYPE':  'residence-type',
   };
-  Object.entries(map).forEach(([group, elId]) => {
+  Object.entries(simpleMap).forEach(([group, elId]) => {
     const sel = document.getElementById(elId);
     if (!sel || !groups[group]) return;
     sel.innerHTML = '<option value="">— เลือก —</option>';
@@ -998,7 +1029,8 @@ async function loadDropdowns() {
       sel.appendChild(opt);
     });
   });
-  // Vehicle colors
+
+  // Vehicle colors (native)
   const colorSel = document.getElementById('vehicle-color');
   colorSel.innerHTML = '<option value="">— เลือกสี —</option>';
   (groups['VEHICLE_COLOR'] || []).forEach(o => {
@@ -1007,6 +1039,115 @@ async function loadDropdowns() {
     opt.textContent = `${o.option_code} - ${o.option_name}`;
     colorSel.appendChild(opt);
   });
+
+  // Searchable dropdowns from DB groups
+  buildSD('sd-ps-bk',        'ps-bk',         groups['PS_BK']            || [], '— เลือก —');
+  buildSD('sd-sale-type',    'sale-type',      groups['SALE_TYPE']        || [], '— เลือก —', onSaleTypeChange);
+  buildSD('sd-payment-cond', 'payment-cond',   groups['PAYMENT_CONDITION']|| [], '— เลือก —');
+  buildSD('sd-body-color',   'body-color',     groups['BODY_COLOR']       || [], '— เลือก —');
+  buildSD('sd-edit-reason',  'edit-reason',    groups['EDIT_REASON']      || [], '— ระบุ (ถ้ามี) —');
+  buildSD('sd-term-years',   'term-years',     groups['TERM_YEARS']       || [], '— เลือก —', calcAll, '5');
+
+  // Province with group headers
+  const provinces = groups['PROVINCE'] || [];
+  const provItems = [
+    { label: '★ ใช้บ่อย (กรุงเทพฯ และปริมณฑล)', isHeader: true },
+    ...provinces.slice(0, 9).map(o => ({ value: o.option_code, label: o.option_name })),
+    { label: 'ทุกจังหวัด', isHeader: true },
+    ...provinces.slice(9).map(o => ({ value: o.option_code, label: o.option_name })),
+  ];
+  buildSDCustom('sd-province', 'province', provItems, '— เลือกจังหวัด —');
+}
+
+// ============================================================
+// SEARCHABLE DROPDOWN ENGINE
+// ============================================================
+function buildSD(wrapId, selectId, options, placeholder, onChange, defaultVal) {
+  const items = options.map(o => ({ value: o.option_code, label: o.option_name }));
+  buildSDCustom(wrapId, selectId, items, placeholder, onChange, defaultVal);
+}
+
+function buildSDCustom(wrapId, selectId, items, placeholder, onChange, defaultVal) {
+  const wrap = document.getElementById(wrapId);
+  const hiddenSel = document.getElementById(selectId);
+  if (!wrap) return;
+
+  // Sync hidden select
+  if (hiddenSel) {
+    hiddenSel.innerHTML = `<option value="">${placeholder||'— เลือก —'}</option>`;
+    items.filter(i => !i.isHeader).forEach(i => {
+      const o = document.createElement('option');
+      o.value = i.value; o.textContent = i.label;
+      hiddenSel.appendChild(o);
+    });
+    if (defaultVal) hiddenSel.value = defaultVal;
+  }
+
+  let selectedVal = defaultVal || '';
+  let selectedLabel = defaultVal
+    ? (items.find(i => !i.isHeader && i.value === defaultVal)?.label || placeholder)
+    : (placeholder || '— เลือก —');
+
+  wrap.innerHTML = `
+    <div class="sd-input" tabindex="0" id="${wrapId}-input" style="color:${selectedVal?'':'var(--gray-600)'}">${selectedLabel}</div>
+    <span class="sd-arrow">▾</span>
+    <div class="sd-dropdown" id="${wrapId}-drop">
+      <div class="sd-search"><input type="text" placeholder="พิมพ์เพื่อค้นหา..." id="${wrapId}-search" autocomplete="off"></div>
+      <div class="sd-list" id="${wrapId}-list"></div>
+    </div>`;
+
+  const inputEl  = wrap.querySelector(`#${wrapId}-input`);
+  const dropEl   = wrap.querySelector(`#${wrapId}-drop`);
+  const searchEl = wrap.querySelector(`#${wrapId}-search`);
+  const listEl   = wrap.querySelector(`#${wrapId}-list`);
+
+  function renderList(filter) {
+    listEl.innerHTML = '';
+    const q = (filter||'').toLowerCase().trim();
+    let hasResult = false;
+    items.forEach(item => {
+      if (item.isHeader) {
+        if (!q) {
+          const d = document.createElement('div');
+          d.className = 'sd-item group-header';
+          d.textContent = item.label;
+          listEl.appendChild(d);
+        }
+        return;
+      }
+      if (q && !item.label.toLowerCase().includes(q)) return;
+      hasResult = true;
+      const d = document.createElement('div');
+      d.className = 'sd-item' + (item.value === selectedVal ? ' selected' : '');
+      d.textContent = item.label;
+      d.onclick = (e) => { e.stopPropagation(); selectItem(item.value, item.label); };
+      listEl.appendChild(d);
+    });
+    if (!hasResult && q) listEl.innerHTML = '<div class="sd-empty">ไม่พบรายการ</div>';
+  }
+
+  function selectItem(val, label) {
+    selectedVal = val; selectedLabel = label;
+    inputEl.textContent = label;
+    inputEl.style.color = val ? '' : 'var(--gray-600)';
+    if (hiddenSel) hiddenSel.value = val;
+    closeDD();
+    if (onChange) onChange();
+  }
+
+  function openDD() {
+    document.querySelectorAll('.sd-dropdown.open').forEach(d => d.classList.remove('open'));
+    dropEl.classList.add('open');
+    searchEl.value = ''; renderList('');
+    setTimeout(() => searchEl.focus(), 30);
+  }
+  function closeDD() { dropEl.classList.remove('open'); }
+
+  inputEl.addEventListener('click', e => { e.stopPropagation(); dropEl.classList.contains('open') ? closeDD() : openDD(); });
+  inputEl.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') openDD(); });
+  searchEl.addEventListener('input',  e => renderList(e.target.value));
+  searchEl.addEventListener('click',  e => e.stopPropagation());
+  document.addEventListener('click',  e => { if (!wrap.contains(e.target)) closeDD(); });
 }
 
 // ============================================================
@@ -1052,7 +1193,8 @@ async function onProviderChange() {
 }
 
 function onSaleTypeChange() {
-  const isCash = document.getElementById('sale-type').value === 'cash';
+  const val = document.getElementById('sale-type').value;
+  const isCash = val === 'CASH';
   document.getElementById('fp-group').style.opacity = isCash ? '0.4' : '1';
   document.getElementById('fp-program-row').style.opacity = isCash ? '0.4' : '1';
 }
