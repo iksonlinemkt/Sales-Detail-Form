@@ -194,6 +194,17 @@ textarea{resize:vertical;min-height:60px;}
   .rate-grid{grid-template-columns:1fr 1fr;}
 }
 
+/* DATE DISPLAY */
+.date-display-wrap { position:relative; }
+.date-display-wrap input[type=date] {
+  color:transparent; cursor:pointer;
+}
+.date-display-wrap .date-label {
+  position:absolute; left:10px; top:50%; transform:translateY(-50%);
+  font-size:13px; color:var(--gray-800); pointer-events:none;
+}
+.date-display-wrap input[type=date]:placeholder-shown + .date-label { color:var(--gray-600); }
+
 /* SEARCHABLE DROPDOWN */
 .sd-wrap { position:relative; width:100%; }
 .sd-input {
@@ -296,32 +307,44 @@ textarea{resize:vertical;min-height:60px;}
 </div>
 
 <!-- TOP ROW -->
-<div class="top-row">
-  <div class="field-group">
-    <label>สาขา <span class="req">*</span></label>
-    <select id="branch" onchange="onBranchChange()">
-      <option value="">— เลือกสาขา —</option>
-    </select>
+<div style="background:var(--white);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow);">
+  <div style="display:grid;grid-template-columns:1.8fr 1.8fr 1fr 0.8fr;gap:14px;align-items:end;margin-bottom:12px;">
+    <div class="field-group">
+      <label>สาขา <span class="req">*</span></label>
+      <select id="branch" onchange="onBranchChange()">
+        <option value="">— เลือกสาขา —</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>SC CODE <span class="req">*</span></label>
+      <select id="sc-code" onchange="onSCChange()">
+        <option value="">— เลือก SC —</option>
+      </select>
+      <div class="sc-info" id="sc-name-display">—</div>
+    </div>
+    <div class="field-group">
+      <label>วันที่ขาย <span class="req">*</span></label>
+      <input type="date" id="sale-date" onchange="calcAll()">
+    </div>
+    <div class="field-group">
+      <label>SO#</label>
+      <div id="so-badge" style="padding:8px 10px;background:var(--sky);border-radius:6px;font-size:12px;color:var(--gray-600);min-height:38px;display:flex;align-items:center;font-weight:600;">Auto</div>
+    </div>
   </div>
-  <div class="field-group">
-    <label>SC CODE <span class="req">*</span></label>
-    <select id="sc-code" onchange="onSCChange()">
-      <option value="">— เลือก SC —</option>
-    </select>
-    <div class="sc-info" id="sc-name-display">—</div>
-  </div>
-  <div class="field-group">
-    <label>วันที่ขาย <span class="req">*</span></label>
-    <input type="date" id="sale-date" onchange="calcAll()">
-  </div>
-  <div class="field-group">
-    <label>PS/BK</label>
-    <select id="ps-bk" class="sd-hidden"><option value="PS">PS</option><option value="BK">BK</option></select>
-    <div class="sd-wrap" id="sd-ps-bk"></div>
-  </div>
-  <div class="field-group">
-    <label>&nbsp;</label>
-    <div id="so-badge" style="padding:8px 14px;background:var(--sky);border-radius:6px;font-size:12px;color:var(--gray-600);min-height:38px;display:flex;align-items:center;">Auto SO#</div>
+  <div style="display:grid;grid-template-columns:0.8fr 1.5fr 1.5fr;gap:14px;align-items:end;">
+    <div class="field-group">
+      <label>PS/BK</label>
+      <select id="ps-bk" class="sd-hidden"><option value="PS">PS</option><option value="BK">BK</option></select>
+      <div class="sd-wrap" id="sd-ps-bk"></div>
+    </div>
+    <div class="field-group" id="ref-number-group" style="display:none">
+      <label>เลขที่อ้างอิง (12 หลัก)</label>
+      <input type="text" id="ref-number" maxlength="12" placeholder="000000000000" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    </div>
+    <div class="field-group">
+      <label>สถานะ</label>
+      <div style="padding:8px 10px;background:var(--gray-100);border-radius:6px;font-size:12px;color:var(--gray-600);min-height:38px;display:flex;align-items:center;" id="status-label-display">DRAFT</div>
+    </div>
   </div>
 </div>
 
@@ -388,15 +411,14 @@ textarea{resize:vertical;min-height:60px;}
         <select id="lead-source"><option value="">— เลือก —</option></select>
       </div>
     </div>
-    <div class="field-row cols-3">
+    <div class="field-row cols-2">
       <div class="field-group">
         <label>ประเภทการซื้อ</label>
         <select id="purchase-type"><option value="">— เลือก —</option></select>
       </div>
-      <div class="field-group"><label>วันรับบิล</label><input type="date" id="invoice-date"></div>
       <div class="field-group">
-        <label>ประเทศ</label>
-        <select id="country"><option value="TH">ไทย</option></select>
+        <label>วันรับรถ</label>
+        <input type="date" id="delivery-date-2">
       </div>
     </div>
   </div>
@@ -489,7 +511,7 @@ textarea{resize:vertical;min-height:60px;}
     <span class="toggle-icon">▾</span>
   </div>
   <div class="section-body">
-    <div class="field-row cols-4">
+    <div class="field-row cols-3">
       <div class="field-group" style="grid-column:span 2">
         <label>รุ่นรถ <span class="req">*</span></label>
         <select id="vehicle-model" onchange="onModelChange()">
@@ -499,11 +521,6 @@ textarea{resize:vertical;min-height:60px;}
       <div class="field-group">
         <label>Model Code <span class="auto-badge">AUTO</span></label>
         <div class="model-code-badge" id="model-code-display">—</div>
-      </div>
-      <div class="field-group">
-        <label>สีภายในโบดี้</label>
-        <select id="body-color" class="sd-hidden"><option value="">— เลือก —</option></select>
-        <div class="sd-wrap" id="sd-body-color"></div>
       </div>
     </div>
     <div class="field-row cols-2">
@@ -528,8 +545,8 @@ textarea{resize:vertical;min-height:60px;}
             <div class="input-addon"><input type="number" id="crp-amount" placeholder="0" onchange="calcAll()" min="0"><span class="addon">บาท</span></div>
           </div>
           <div class="field-group">
-            <label>ราคาเปิดใบเสร็จ <span class="req">*</span></label>
-            <div class="input-addon"><input type="number" id="invoice-amount" placeholder="0" onchange="calcAll()" min="0"><span class="addon">บาท</span></div>
+            <label>ลด CRP <span class="auto-badge">แคมเปญ</span></label>
+            <div class="input-addon"><input type="number" id="crp-discount" value="0" onchange="calcAll()" min="0" style="color:var(--red);font-weight:600"><span class="addon">บาท</span></div>
           </div>
         </div>
         <div class="field-row cols-2">
@@ -542,16 +559,16 @@ textarea{resize:vertical;min-height:60px;}
             <div class="input-addon"><input type="number" id="body-acc-amount" value="0" onchange="calcAll()" min="0"><span class="addon">บาท</span></div>
           </div>
         </div>
-        <div class="field-row cols-2">
-          <div class="field-group">
-            <label>ISG</label>
-            <div class="input-addon"><input type="number" id="isg-amount" value="0" onchange="calcAll()" min="0"><span class="addon">บาท</span></div>
-          </div>
-          <div class="field-group">
-            <label>รถเก่า / Trade In</label>
-            <div class="input-addon"><input type="number" id="trade-in-amount" value="0" onchange="calcAll()" min="0"><span class="addon">บาท</span></div>
-          </div>
+        <div class="field-group">
+          <label>ลดดาวน์ <span class="auto-badge">แคมเปญ</span></label>
+          <div class="input-addon"><input type="number" id="down-discount" value="0" onchange="calcAll()" min="0" style="color:var(--green);font-weight:600"><span class="addon">บาท</span></div>
         </div>
+        <div class="field-group" style="margin-top:8px">
+          <label>ราคาเปิดใบเสร็จ <span class="auto-badge">AUTO</span></label>
+          <div class="display-value blue" id="invoice-amount-display" style="font-size:15px;">—</div>
+          <div style="font-size:10px;color:var(--gray-600);margin-top:2px;">= CRP - ลด CRP + Sub Down + ตู้/หลังคา</div>
+        </div>
+        <input type="hidden" id="invoice-amount" value="0">
       </div>
       <!-- RIGHT -->
       <div class="finance-col">
@@ -640,9 +657,7 @@ textarea{resize:vertical;min-height:60px;}
           <div class="cost-item total-row"><span class="label">รวมค่าใช้จ่าย</span><span class="amount" id="cost-total">—</span></div>
           <div class="cost-item deduct-row"><span class="label">หัก เงินจอง</span><span class="amount" id="cost-booking-deduct">—</span></div>
           <div class="cost-item deduct-row"><span class="label">Subdown</span><span class="amount" id="cost-subdown-deduct">—</span></div>
-          <div class="cost-item deduct-row"><span class="label">รถเก่า/ISG</span><span class="amount" id="cost-tradein-deduct">—</span></div>
-          <div class="cost-item amber-row"><span class="label">ส่วนลดตามนโยบายบริษัท</span><div class="input-addon" style="max-width:130px"><input type="number" id="company-discount" value="0" onchange="calcAll()" min="0" style="padding:4px 6px;font-size:12px"><span class="addon" style="font-size:11px">บาท</span></div></div>
-          <div class="cost-item deduct-row"><span class="label">ส่วนลดทะเบียนรายรุ่น</span><div class="input-addon" style="max-width:130px"><input type="number" id="reg-discount" value="0" onchange="calcAll()" min="0" style="padding:4px 6px;font-size:12px"><span class="addon" style="font-size:11px">บาท</span></div></div>
+          <div class="cost-item deduct-row"><span class="label">ลดดาวน์ (จากแคมเปญ)</span><span class="amount" id="cost-down-discount" style="color:var(--green)">—</span></div>
           <div class="cost-item net-row"><span class="label">สรุปค่าใช้จ่าย ณ วันออกรถ</span><span class="amount" id="cost-net">—</span></div>
         </div>
         <p class="note-text">***คำอธิบายเพิ่มเติมเฉพาะบัตรกำนัลที่มีเงื่อนไขแถมประกัน หรือ ดบพิเศษ***</p>
@@ -1041,7 +1056,7 @@ async function loadDropdowns() {
   });
 
   // Searchable dropdowns from DB groups
-  buildSD('sd-ps-bk',        'ps-bk',         groups['PS_BK']            || [], '— เลือก —');
+  buildSD('sd-ps-bk',        'ps-bk',         groups['PS_BK']            || [], '— เลือก —', (val) => onPsBkChange(document.getElementById('ps-bk').value), 'PS');
   buildSD('sd-sale-type',    'sale-type',      groups['SALE_TYPE']        || [], '— เลือก —', onSaleTypeChange);
   buildSD('sd-payment-cond', 'payment-cond',   groups['PAYMENT_CONDITION']|| [], '— เลือก —');
   buildSD('sd-body-color',   'body-color',     groups['BODY_COLOR']       || [], '— เลือก —');
@@ -1199,6 +1214,13 @@ function onSaleTypeChange() {
   document.getElementById('fp-program-row').style.opacity = isCash ? '0.4' : '1';
 }
 
+function onPsBkChange(val) {
+  const refGroup = document.getElementById('ref-number-group');
+  if (refGroup) {
+    refGroup.style.display = val ? 'block' : 'none';
+  }
+}
+
 // ============================================================
 // CALCULATIONS
 // ============================================================
@@ -1207,11 +1229,10 @@ function fmt(v) { return v.toLocaleString('th-TH', {minimumFractionDigits:2, max
 
 function calcAll() {
   const crp = n('crp-amount');
-  const invoice = n('invoice-amount') || crp;
+  const crpDiscount = n('crp-discount');   // ลด CRP จากแคมเปญ
   const subDown = n('sub-down');
   const bodyAcc = n('body-acc-amount');
-  const isg = n('isg-amount');
-  const tradeIn = n('trade-in-amount');
+  const downDiscount = n('down-discount'); // ลดดาวน์จากแคมเปญ
   const down = n('down-payment');
   const bookingAmt = n('booking-amount');
   const tableRate = n('table-rate') / 100;
@@ -1222,19 +1243,27 @@ function calcAll() {
   const registration = n('registration-amount');
   const otherCost = n('other-amount');
   const plateDeposit = n('plate-deposit');
-  const companyDiscount = n('company-discount');
-  const regDiscount = n('reg-discount');
 
-  const financeAmount = Math.max(0, invoice - down - subDown - tradeIn - isg + bodyAcc);
+  // ราคาเปิดใบเสร็จ = CRP - ลด CRP + Sub Down + ตู้/หลังคา
+  const invoice = Math.max(0, crp - crpDiscount + subDown + bodyAcc);
+
+  // ยอดจัด = ราคาเปิดใบเสร็จ - เงินดาวน์ - ลดดาวน์ - Sub Down
+  const financeAmount = Math.max(0, invoice - down - downDiscount - subDown);
+
   const downPct = invoice > 0 ? (down / invoice) : 0;
   const actualRate = Math.max(0, tableRate - rateDiscount);
   const monthlyPayment = termMonths > 0 && financeAmount > 0
     ? (financeAmount * (1 + actualRate * termYears)) / termMonths : 0;
   const taxSubdown = subDown * 0.05;
   const costTotal = down + insurance + registration + bodyAcc + otherCost + plateDeposit + taxSubdown;
-  const netExpense = costTotal - bookingAmt - subDown - tradeIn - isg - companyDiscount - regDiscount;
+  const netExpense = costTotal - bookingAmt - subDown - downDiscount;
+
+  // Update hidden invoice field
+  const invEl = document.getElementById('invoice-amount');
+  if (invEl) invEl.value = invoice;
 
   // Finance display
+  setText('invoice-amount-display', invoice > 0 ? fmt(invoice) : '—');
   setText('finance-amount-display', financeAmount > 0 ? fmt(financeAmount) : '—');
   setText('down-pct-display', downPct > 0 ? (downPct*100).toFixed(2)+'%' : '—');
   setText('actual-rate-display', actualRate > 0 ? (actualRate*100).toFixed(2)+'%' : '—');
@@ -1243,14 +1272,14 @@ function calcAll() {
   setText('monthly-payment-display', monthlyPayment > 0 ? fmt(monthlyPayment) : '—');
 
   // Cost display
-  setText('cost-down', fmt(down));
+  setText('cost-down', down > 0 ? fmt(down) : '—');
   document.getElementById('cost-down-pct').textContent = downPct > 0 ? `(${(downPct*100).toFixed(1)}%)` : '';
   setText('cost-body-acc', bodyAcc > 0 ? fmt(bodyAcc) : '-');
   setText('cost-tax-subdown', taxSubdown > 0 ? fmt(taxSubdown) : '-');
   setText('cost-total', fmt(costTotal));
   setText('cost-booking-deduct', bookingAmt > 0 ? fmt(bookingAmt) : '-');
   setText('cost-subdown-deduct', subDown > 0 ? fmt(subDown) : '-');
-  setText('cost-tradein-deduct', (tradeIn+isg) > 0 ? fmt(tradeIn+isg) : '-');
+  setText('cost-down-discount', downDiscount > 0 ? fmt(downDiscount) : '-');
   setText('cost-net', fmt(Math.max(0, netExpense)));
 
   // Summary panel
@@ -1486,16 +1515,16 @@ async function sendToFinance() {
     const providerCode = document.getElementById('finance-provider').value;
     const modelOpt = document.getElementById('vehicle-model').selectedOptions[0];
     const termYears = parseInt(document.getElementById('term-years').value || 5);
-    const invoice = n('invoice-amount') || n('crp-amount');
+    const invoice = Math.max(0, n('crp-amount') - n('crp-discount') + n('sub-down') + n('body-acc-amount'));
     const down = n('down-payment');
     const subDown = n('sub-down');
     const bodyAcc = n('body-acc-amount');
-    const isg = n('isg-amount');
-    const tradeIn = n('trade-in-amount');
+    const crpDiscount = n('crp-discount');
+    const downDiscount = n('down-discount');
     const tableRate = n('table-rate');
     const rateDiscount = n('rate-discount');
     const actualRate = Math.max(0, tableRate - rateDiscount);
-    const financeAmount = Math.max(0, invoice - down - subDown - tradeIn - isg + bodyAcc);
+    const financeAmount = Math.max(0, invoice - down - downDiscount - subDown);
     const monthlyPayment = termYears > 0 && financeAmount > 0
       ? (financeAmount * (1 + (actualRate/100) * termYears)) / (termYears * 12) : 0;
 
@@ -1591,8 +1620,8 @@ function addCampaignRow() {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td><select style="width:100%"><option value="">— เลือกแคมเปญ —</option>${campOpts}</select></td>
-    <td><input type="number" value="0" min="0" style="width:100%"></td>
-    <td><select style="width:100%">
+    <td><input type="number" value="0" min="0" style="width:100%" onchange="syncCampaignToFields(this.closest('tr'))"></td>
+    <td><select style="width:100%" onchange="syncCampaignToFields(this.closest('tr'))">
       <option value="">— ระบุ —</option>
       <option value="REDUCE_DOWN">ลดดาวน์</option>
       <option value="REDUCE_CRP">ลด CRP</option>
@@ -1601,8 +1630,31 @@ function addCampaignRow() {
       <option value="REDUCE_REG">ลดทะเบียน</option>
       <option value="SWAP_PACK">แลกแพ็กเกจ</option>
     </select></td>
-    <td><button class="btn btn-sm btn-ghost btn-icon" onclick="this.closest('tr').remove()">✕</button></td>`;
+    <td><button class="btn btn-sm btn-ghost btn-icon" onclick="this.closest('tr').remove();syncAllCampaigns()">✕</button></td>`;
   tbody.appendChild(tr);
+}
+
+function syncCampaignToFields(tr) {
+  // Re-calculate all campaign totals
+  syncAllCampaigns();
+}
+
+function syncAllCampaigns() {
+  let totalCrpDiscount = 0;
+  let totalDownDiscount = 0;
+  document.querySelectorAll('#campaign-tbody tr').forEach(tr => {
+    const sels = tr.querySelectorAll('select');
+    const inp = tr.querySelector('input[type=number]');
+    const actionType = sels[1]?.value || '';
+    const amount = parseFloat(inp?.value) || 0;
+    if (actionType === 'REDUCE_CRP') totalCrpDiscount += amount;
+    if (actionType === 'REDUCE_DOWN') totalDownDiscount += amount;
+  });
+  const crpEl = document.getElementById('crp-discount');
+  const downEl = document.getElementById('down-discount');
+  if (crpEl) crpEl.value = totalCrpDiscount;
+  if (downEl) downEl.value = totalDownDiscount;
+  calcAll();
 }
 
 function addGiftRow(tbodyId) {
@@ -1657,6 +1709,37 @@ function showToast(msg, type='info') {
 
 function formatDateTH(d) {
   return d.toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+}
+
+function initDateDisplays() {
+  document.querySelectorAll('input[type=date]').forEach(input => {
+    if (input.closest('.date-display-wrap')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'date-display-wrap';
+    wrap.style.position = 'relative';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    const label = document.createElement('span');
+    label.className = 'date-label';
+    label.textContent = input.value ? formatDateTHShort(input.value) : 'วว/ดด/ปปปป';
+    wrap.appendChild(label);
+    input.addEventListener('change', () => {
+      label.textContent = input.value ? formatDateTHShort(input.value) : 'วว/ดด/ปปปป';
+      label.style.color = input.value ? 'var(--gray-800)' : 'var(--gray-600)';
+      if (input.onchange) input.onchange();
+    });
+    if (input.value) {
+      label.style.color = 'var(--gray-800)';
+    } else {
+      label.style.color = 'var(--gray-600)';
+    }
+  });
+}
+
+function formatDateTHShort(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
 }
 
 // START
