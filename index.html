@@ -418,7 +418,7 @@ textarea{resize:vertical;min-height:60px;}
       </div>
       <div class="field-group">
         <label>วันรับรถ</label>
-        <input type="date" id="delivery-date-2">
+        <input type="date" id="delivery-date">
       </div>
     </div>
   </div>
@@ -912,29 +912,25 @@ async function init() {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   document.getElementById('sale-date').value = todayStr;
-  document.getElementById('invoice-date').value = todayStr;
   document.getElementById('today-display').textContent = formatDateTH(today);
 
-  try {
-    await Promise.all([
-      loadBranches(),
-      loadModels(),
-      loadProviders(),
-      loadPrograms(),
-      loadCampaigns(),
-      loadDropdowns(),
-    ]);
-    addCampaignRow();
-    addGiftRow('gift-tbody');
-    addAddonRow();
-    calcAll();
-    showToast('โหลดข้อมูลสำเร็จ ✅', 'success');
-  } catch(e) {
-    const msg = e?.message || e?.error_description || JSON.stringify(e) || 'Unknown error';
-    showToast('โหลดข้อมูลล้มเหลว: ' + msg, 'error');
-    console.error('Init error:', e);
-  }
+  // Load each independently so one failure doesn't block others
+  const loads = [
+    loadBranches().catch(e => console.error('branches:', e)),
+    loadModels().catch(e => console.error('models:', e)),
+    loadProviders().catch(e => console.error('providers:', e)),
+    loadPrograms().catch(e => console.error('programs:', e)),
+    loadCampaigns().catch(e => console.error('campaigns:', e)),
+    loadDropdowns().catch(e => console.error('dropdowns:', e)),
+  ];
+  await Promise.all(loads);
+  addCampaignRow();
+  addGiftRow('gift-tbody');
+  addAddonRow();
+  initDateDisplays();
+  calcAll();
   document.getElementById('loading-overlay').style.display = 'none';
+  showToast('โหลดข้อมูลสำเร็จ ✅', 'success');
 }
 
 async function loadBranches() {
@@ -1056,7 +1052,7 @@ async function loadDropdowns() {
   });
 
   // Searchable dropdowns from DB groups
-  buildSD('sd-ps-bk',        'ps-bk',         groups['PS_BK']            || [], '— เลือก —', (val) => onPsBkChange(document.getElementById('ps-bk').value), 'PS');
+  buildSD('sd-ps-bk',        'ps-bk',         groups['PS_BK']            || [], '— เลือก —', () => onPsBkChange(document.getElementById('ps-bk').value), 'PS');
   buildSD('sd-sale-type',    'sale-type',      groups['SALE_TYPE']        || [], '— เลือก —', onSaleTypeChange);
   buildSD('sd-payment-cond', 'payment-cond',   groups['PAYMENT_CONDITION']|| [], '— เลือก —');
   buildSD('sd-body-color',   'body-color',     groups['BODY_COLOR']       || [], '— เลือก —');
