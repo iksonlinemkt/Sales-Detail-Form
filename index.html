@@ -284,6 +284,31 @@ tbody tr:last-child{border-bottom:none;}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* FINANCE IFRAME */
+.finance-panel{display:none;margin-top:20px;}
+.finance-panel.active{display:block;}
+.finance-iframe-wrap{
+  background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);
+  overflow:hidden;border:1px solid var(--g200);
+}
+.finance-iframe-header{
+  background:var(--navy);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+}
+.finance-iframe-title{color:white;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.finance-iframe-actions{display:flex;gap:8px;}
+.iframe-btn{
+  padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid rgba(255,255,255,.3);color:white;
+  background:rgba(255,255,255,.1);transition:background .15s;font-family:var(--font);
+}
+.iframe-btn:hover{background:rgba(255,255,255,.2);}
+.finance-iframe{width:100%;height:calc(100vh - 220px);min-height:600px;border:none;display:block;}
+.iframe-loading{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:400px;gap:16px;color:var(--g500);
+}
+.iframe-loading .spinner{width:36px;height:36px;border-width:4px;}
+
 /* PAGINATION */
 .pagination{
   padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
@@ -705,13 +730,72 @@ function getFilteredOrders() {
   });
 }
 
+const FINANCE_URL = 'https://iks-finance.vercel.app';
+let financeLoaded = false;
+
 function filterByTab(tab) {
   CURRENT_TAB = tab;
   CURRENT_PAGE = 1;
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
-  renderTable();
+
+  const financePanel = document.getElementById('finance-panel');
+  const listCard = document.querySelector('.list-card');
+  const workflowSection = document.querySelector('.workflow-section');
+  const kpiGrid = document.querySelector('.kpi-grid');
+
+  if (tab === 'finance') {
+    // Show finance iframe
+    financePanel.classList.add('active');
+    listCard.style.display = 'none';
+    if (workflowSection) workflowSection.style.display = 'none';
+    kpiGrid.style.display = 'none';
+
+    // Load iframe only once
+    if (!financeLoaded) {
+      const iframe = document.getElementById('finance-iframe');
+      iframe.src = FINANCE_URL;
+      financeLoaded = true;
+    }
+  } else {
+    // Show normal list
+    financePanel.classList.remove('active');
+    listCard.style.display = 'block';
+    if (workflowSection) workflowSection.style.display = 'block';
+    kpiGrid.style.display = 'grid';
+    renderTable();
+  }
+}
+
+function onIframeLoad() {
+  document.getElementById('iframe-loading').style.display = 'none';
+  document.getElementById('finance-iframe').style.display = 'block';
+}
+
+function onIframeError() {
+  document.getElementById('iframe-loading').innerHTML =
+    '<div style="text-align:center"><div style="font-size:32px;margin-bottom:8px">⚠️</div><p style="color:var(--red);font-weight:600">โหลด Finance App ไม่ได้</p><p style="color:var(--g500);font-size:12px;margin-top:4px">กรุณาเปิดแท็บใหม่แทน</p><button class="btn btn-primary" onclick="openFinanceNewTab()" style="margin-top:12px">↗ เปิดแท็บใหม่</button></div>';
+}
+
+function reloadFinanceFrame() {
+  const iframe = document.getElementById('finance-iframe');
+  iframe.style.display = 'none';
+  document.getElementById('iframe-loading').style.display = 'flex';
+  iframe.src = FINANCE_URL + '?t=' + Date.now();
+}
+
+function openFinanceNewTab() {
+  window.open(FINANCE_URL, '_blank');
+}
+
+function toggleFullscreen() {
+  const wrap = document.querySelector('.finance-iframe-wrap');
+  if (!document.fullscreenElement) {
+    wrap.requestFullscreen().catch(() => openFinanceNewTab());
+  } else {
+    document.exitFullscreen();
+  }
 }
 
 function filterTable() {
