@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKS — รายการคำขอทั้งหมด</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#0B2545;--navy2:#1a3a6b;--navy3:#2a5298;
+  --blue:#1565C0;--blue2:#1976D2;--sky:#E8F0FE;--sky2:#c5d9f7;
+  --white:#fff;
+  --g50:#F8F9FA;--g100:#F1F3F5;--g200:#E9ECEF;--g300:#DEE2E6;
+  --g400:#CED4DA;--g500:#ADB5BD;--g600:#6C757D;--g700:#495057;--g800:#343A40;
+  --green:#16A34A;--green-bg:#DCFCE7;--green-txt:#15803D;
+  --amber:#D97706;--amber-bg:#FEF3C7;--amber-txt:#92400E;
+  --red:#DC2626;--red-bg:#FEE2E2;--red-txt:#991B1B;
+  --purple:#7C3AED;--purple-bg:#EDE9FE;
+  --teal:#0891B2;--teal-bg:#CFFAFE;
+  --orange:#EA580C;--orange-bg:#FFEDD5;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+  --radius:10px;--font:'Sarabun',sans-serif;
+}
+body{font-family:var(--font);background:var(--g50);color:var(--g800);font-size:14px;display:flex;min-height:100vh;}
+
+/* ─── SIDEBAR ─── */
+.sidebar{
+  width:240px;min-height:100vh;background:var(--navy);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:50;
+  transition:width .25s;
+}
+.sidebar-logo{
+  padding:20px 16px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.logo-box{display:flex;flex-direction:column;line-height:1.2;}
+.logo-isuzu{font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.6);font-weight:500;letter-spacing:.5px;}
+.whale-logo{width:44px;height:44px;flex-shrink:0;}
+
+.sidebar-section{padding:12px 8px 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1px;text-transform:uppercase;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  margin:1px 6px;border-radius:8px;cursor:pointer;
+  color:rgba(255,255,255,.7);font-size:13px;font-weight:500;
+  transition:all .15s;text-decoration:none;
+}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:var(--blue2);color:#fff;font-weight:600;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.8;}
+.nav-item.active svg{opacity:1;}
+.nav-badge{
+  margin-left:auto;background:var(--red);color:#fff;
+  font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;
+}
+.nav-sub{padding-left:14px;}
+.nav-sub .nav-item{font-size:12.5px;padding:8px 12px;}
+
+.sidebar-footer{
+  margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.08);
+}
+.user-card{
+  display:flex;align-items:center;gap:10px;padding:10px;
+  background:rgba(255,255,255,.06);border-radius:8px;cursor:pointer;
+}
+.user-avatar{
+  width:34px;height:34px;border-radius:50%;background:var(--blue2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.user-name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.3;}
+.user-role{font-size:10.5px;color:rgba(255,255,255,.5);}
+.whale-footer{width:80px;margin:8px auto 0;display:block;opacity:.25;}
+
+/* ─── MAIN ─── */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+
+/* ─── TOPBAR ─── */
+.topbar{
+  height:60px;background:#fff;border-bottom:1px solid var(--g200);
+  display:flex;align-items:center;padding:0 24px;gap:16px;
+  position:sticky;top:0;z-index:40;box-shadow:var(--shadow);
+}
+.topbar-title{font-size:16px;font-weight:700;color:var(--navy);flex:1;}
+.topbar-sub{font-size:12px;color:var(--g600);font-weight:400;}
+.topbar-actions{display:flex;align-items:center;gap:12px;}
+.notif-btn{
+  width:36px;height:36px;border-radius:50%;background:var(--g100);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  position:relative;transition:background .15s;
+}
+.notif-btn:hover{background:var(--g200);}
+.notif-dot{
+  position:absolute;top:6px;right:6px;width:8px;height:8px;
+  background:var(--red);border-radius:50%;border:2px solid #fff;
+}
+.topbar-user{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;
+  border-radius:8px;cursor:pointer;transition:background .15s;
+}
+.topbar-user:hover{background:var(--g100);}
+.topbar-avatar{
+  width:32px;height:32px;border-radius:50%;background:var(--blue);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;
+}
+.topbar-uname{font-size:12.5px;font-weight:600;color:var(--g800);}
+.topbar-uid{font-size:11px;color:var(--g500);}
+
+/* ─── CONTENT ─── */
+.content{padding:24px;flex:1;}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi-card{
+  background:#fff;border-radius:var(--radius);padding:18px 20px;
+  box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;
+  border-left:4px solid transparent;transition:transform .15s;
+}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.kpi-card.all{border-color:var(--blue);}
+.kpi-card.pending{border-color:var(--amber);}
+.kpi-card.approved{border-color:var(--green);}
+.kpi-card.rejected{border-color:var(--red);}
+.kpi-icon{
+  width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.kpi-card.all .kpi-icon{background:var(--sky);}
+.kpi-card.pending .kpi-icon{background:var(--amber-bg);}
+.kpi-card.approved .kpi-icon{background:var(--green-bg);}
+.kpi-card.rejected .kpi-icon{background:var(--red-bg);}
+.kpi-number{font-size:28px;font-weight:800;line-height:1;}
+.kpi-card.all .kpi-number{color:var(--blue);}
+.kpi-card.pending .kpi-number{color:var(--amber);}
+.kpi-card.approved .kpi-number{color:var(--green);}
+.kpi-card.rejected .kpi-number{color:var(--red);}
+.kpi-label{font-size:12px;color:var(--g600);margin-top:3px;font-weight:500;}
+
+/* MAIN CARD */
+.list-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+
+.list-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--g200);}
+.list-header-title{font-size:15px;font-weight:700;color:var(--navy);}
+
+/* TABS */
+.tabs{display:flex;gap:2px;padding:12px 20px;border-bottom:1px solid var(--g200);background:var(--g50);overflow-x:auto;}
+.tab{
+  padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
+  cursor:pointer;border:none;background:transparent;color:var(--g600);
+  transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;
+}
+.tab:hover{background:var(--g200);color:var(--g800);}
+.tab.active{background:var(--navy);color:#fff;}
+.tab-count{
+  background:rgba(255,255,255,.25);color:inherit;
+  font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;
+}
+.tab:not(.active) .tab-count{background:var(--g200);color:var(--g600);}
+
+/* TOOLBAR */
+.toolbar{padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--g200);}
+.search-wrap{flex:1;max-width:320px;position:relative;}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--g400);}
+.search-wrap input{
+  width:100%;padding:8px 12px 8px 34px;border:1.5px solid var(--g300);
+  border-radius:8px;font-size:13px;font-family:var(--font);outline:none;
+  transition:border .15s;
+}
+.search-wrap input:focus{border-color:var(--blue2);}
+.filter-select{
+  padding:7px 12px;border:1.5px solid var(--g300);border-radius:8px;
+  font-size:12.5px;font-family:var(--font);color:var(--g700);outline:none;cursor:pointer;
+  background:white;
+}
+.filter-select:focus{border-color:var(--blue2);}
+.toolbar-right{margin-left:auto;display:flex;gap:8px;}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+  border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;
+  font-family:var(--font);transition:all .15s;
+}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 4px rgba(21,101,192,.3);}
+.btn-primary:hover{background:var(--blue2);transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--g600);border:1.5px solid var(--g300);}
+.btn-ghost:hover{background:var(--g100);}
+.btn svg{width:14px;height:14px;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--navy);}
+thead th{
+  padding:11px 16px;text-align:left;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,.85);white-space:nowrap;letter-spacing:.3px;
+}
+thead th:first-child{border-radius:0;}
+tbody tr{border-bottom:1px solid var(--g100);transition:background .1s;}
+tbody tr:hover{background:var(--sky);}
+tbody td{padding:12px 16px;font-size:13px;vertical-align:middle;}
+tbody tr:last-child{border-bottom:none;}
+
+.so-number{font-weight:700;color:var(--blue);font-size:12.5px;}
+.customer-name{font-weight:600;color:var(--g800);}
+.model-info{font-size:12px;color:var(--g600);margin-top:1px;}
+.date-text{font-size:12.5px;color:var(--g700);}
+.time-text{font-size:11px;color:var(--g500);}
+.officer-name{font-size:12.5px;font-weight:500;color:var(--g800);}
+.officer-role{font-size:11px;color:var(--g500);}
+
+/* STATUS BADGES */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;
+}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.badge-draft{background:#F1F5F9;color:#64748B;}
+.badge-draft::before{background:#94A3B8;}
+.badge-pending{background:var(--amber-bg);color:var(--amber-txt);}
+.badge-pending::before{background:var(--amber);}
+.badge-approved{background:var(--green-bg);color:var(--green-txt);}
+.badge-approved::before{background:var(--green);}
+.badge-returned{background:var(--red-bg);color:var(--red-txt);}
+.badge-returned::before{background:var(--red);}
+.badge-cashier{background:var(--teal-bg);color:var(--teal);}
+.badge-cashier::before{background:var(--teal);}
+.badge-admin{background:var(--purple-bg);color:var(--purple);}
+.badge-admin::before{background:var(--purple);}
+.badge-finance{background:var(--orange-bg);color:var(--orange);}
+.badge-finance::before{background:var(--orange);}
+.badge-delivered{background:var(--green-bg);color:var(--green-txt);}
+.badge-delivered::before{background:var(--green);}
+
+/* TYPE BADGE */
+.type-badge{
+  padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;
+}
+.type-form{background:var(--sky);color:var(--blue);}
+.type-approve{background:var(--amber-bg);color:var(--amber);}
+.type-send{background:var(--teal-bg);color:var(--teal);}
+.type-finance{background:var(--purple-bg);color:var(--purple);}
+
+/* ACTION BTNS */
+.action-btn{
+  width:32px;height:32px;border-radius:8px;border:1.5px solid var(--g300);
+  background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--g600);transition:all .15s;
+}
+.action-btn:hover{background:var(--sky);border-color:var(--blue2);color:var(--blue);}
+.action-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+.action-btn.primary:hover{background:var(--blue2);}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-state svg{color:var(--g300);margin-bottom:12px;}
+.empty-state p{color:var(--g500);font-size:14px;}
+
+/* WORKFLOW */
+.workflow-section{
+  margin-top:20px;background:#fff;border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px 24px;
+}
+.workflow-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;}
+.workflow-steps{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;}
+.wf-step{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:120px;}
+.wf-icon{
+  width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:20px;border:2px solid transparent;
+}
+.wf-step.step1 .wf-icon{background:var(--sky);border-color:var(--blue2);}
+.wf-step.step2 .wf-icon{background:var(--amber-bg);border-color:var(--amber);}
+.wf-step.step3 .wf-icon{background:var(--red-bg);border-color:var(--red);}
+.wf-step.step4 .wf-icon{background:var(--purple-bg);border-color:var(--purple);}
+.wf-name{font-size:12.5px;font-weight:700;color:var(--g800);text-align:center;}
+.wf-desc{font-size:11px;color:var(--g500);text-align:center;max-width:100px;}
+.wf-arrow{color:var(--g300);font-size:20px;margin:0 4px;padding-bottom:28px;}
+
+/* LOADING */
+.loading-row td{text-align:center;padding:40px;color:var(--g500);}
+.spinner{
+  width:24px;height:24px;border:3px solid var(--g200);border-top-color:var(--blue);
+  border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PAGINATION */
+.pagination{
+  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid var(--g200);background:var(--g50);
+}
+.page-info{font-size:12px;color:var(--g600);}
+.page-btns{display:flex;gap:4px;}
+.page-btn{
+  width:30px;height:30px;border-radius:6px;border:1.5px solid var(--g300);
+  background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;color:var(--g700);
+  transition:all .15s;
+}
+.page-btn:hover{background:var(--sky);border-color:var(--blue2);color:var(--blue);}
+.page-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+
+/* TOAST */
+.toast{
+  position:fixed;top:70px;right:20px;padding:12px 20px;border-radius:8px;
+  font-size:13px;font-weight:600;z-index:9999;box-shadow:var(--shadow-lg);
+  transform:translateX(120%);transition:transform .3s ease;max-width:320px;
+}
+.toast.show{transform:translateX(0);}
+.toast-success{background:var(--green);color:#fff;}
+.toast-error{background:var(--red);color:#fff;}
+.toast-info{background:var(--navy);color:#fff;}
+
+@media(max-width:1024px){
+  .sidebar{width:60px;}
+  .sidebar .logo-box,.nav-item span,.sidebar-section,.user-name,.user-role,.whale-footer,.logo-sub{display:none;}
+  .nav-item{justify-content:center;padding:12px;}
+  .main{margin-left:60px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <!-- Whale SVG -->
+    <svg class="whale-logo" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="38" fill="#1565C0" opacity=".15"/>
+      <ellipse cx="40" cy="48" rx="24" ry="16" fill="#1976D2"/>
+      <ellipse cx="40" cy="44" rx="20" ry="14" fill="#42A5F5"/>
+      <circle cx="33" cy="38" r="3" fill="white"/>
+      <circle cx="33" cy="38" r="1.5" fill="#1565C0"/>
+      <path d="M35 46 Q40 50 45 46" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M18 50 Q12 56 16 62 Q22 58 20 52Z" fill="#1976D2"/>
+      <path d="M62 50 Q68 56 64 62 Q58 58 60 52Z" fill="#1976D2"/>
+      <path d="M40 30 Q38 24 36 20 Q40 18 44 20 Q42 24 40 30Z" fill="#EF5350"/>
+      <path d="M36 20 Q38 16 42 16 Q44 18 44 20 Q41 18 36 20Z" fill="#EF5350"/>
+    </svg>
+    <div class="logo-box">
+      <div class="logo-isuzu">ISUZU</div>
+      <div class="logo-sub">KRUNGTHEP SALES</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">เมนูหลัก</div>
+  <a class="nav-item" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>หน้าหลัก</span>
+  </a>
+
+  <div class="sidebar-section">คำขอของฉัน</div>
+  <a class="nav-item active" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span>รายการทั้งหมด</span>
+    <span class="nav-badge" id="badge-pending">0</span>
+  </a>
+  <div class="nav-sub">
+    <a class="nav-item" href="index_form.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>ทำใบคำขอ</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>ทำใบขอสินเชื่อ</span>
+    </a>
+  </div>
+
+  <div class="sidebar-section">ระบบ</div>
+  <a class="nav-item" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>ค้นหา</span>
+  </a>
+  <a class="nav-item" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>รายงาน</span>
+  </a>
+  <a class="nav-item" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+    <span>ตั้งค่า</span>
+  </a>
+  <a class="nav-item" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    <span>ออกจากระบบ</span>
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">วว</div>
+      <div>
+        <div class="user-name">วิว วรพงศ์</div>
+        <div class="user-role">รหัสพนักงาน 10320</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">รายการคำขอทั้งหมด</div>
+      <div class="topbar-sub">ติดตามสถานะคำขอและจัดการเอกสาร</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="notif-btn" onclick="showToast('ไม่มีการแจ้งเตือนใหม่','info')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <div class="topbar-user">
+        <div class="topbar-avatar">วว</div>
+        <div>
+          <div class="topbar-uname">วิว วรพงศ์</div>
+          <div class="topbar-uid">รหัสพนักงาน 10320</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card all" onclick="filterByTab('all')" style="cursor:pointer">
+        <div class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div class="kpi-number" id="kpi-all">—</div>
+          <div class="kpi-label">ทั้งหมด</div>
+        </div>
+      </div>
+      <div class="kpi-card pending" onclick="filterByTab('pending')" style="cursor:pointer">
+        <div class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="kpi-number" id="kpi-pending">—</div>
+          <div class="kpi-label">รอดำเนินการ</div>
+        </div>
+      </div>
+      <div class="kpi-card approved" onclick="filterByTab('approved')" style="cursor:pointer">
+        <div class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="kpi-number" id="kpi-approved">—</div>
+          <div class="kpi-label">อนุมัติแล้ว</div>
+        </div>
+      </div>
+      <div class="kpi-card rejected" onclick="filterByTab('returned')" style="cursor:pointer">
+        <div class="kpi-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <div>
+          <div class="kpi-number" id="kpi-returned">—</div>
+          <div class="kpi-label">ไม่อนุมัติ / ตีกลับ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIST CARD -->
+    <div class="list-card">
+      <div class="list-header">
+        <span class="list-header-title">รายการคำขอ</span>
+        <button class="btn btn-primary" onclick="window.open('index_form.html','_blank')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          สร้างใบคำขอใหม่
+        </button>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" data-tab="all" onclick="filterByTab('all')">
+          ทั้งหมด <span class="tab-count" id="tc-all">0</span>
+        </button>
+        <button class="tab" data-tab="form" onclick="filterByTab('form')">
+          ทำใบคำขอ <span class="tab-count" id="tc-form">0</span>
+        </button>
+        <button class="tab" data-tab="pending" onclick="filterByTab('pending')">
+          อนุมัติคำขอ <span class="tab-count" id="tc-pending">0</span>
+        </button>
+        <button class="tab" data-tab="send" onclick="filterByTab('send')">
+          ส่งใบคำขอ <span class="tab-count" id="tc-send">0</span>
+        </button>
+        <button class="tab" data-tab="finance" onclick="filterByTab('finance')">
+          ทำใบขอสินเชื่อ <span class="tab-count" id="tc-finance">0</span>
+        </button>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="ค้นหา เลขเครื่อง, ชื่อลูกค้า..." oninput="filterTable()">
+        </div>
+        <select class="filter-select" id="filter-branch" onchange="filterTable()">
+          <option value="">กรองสาขา</option>
+          <option value="BJ">BJ - บางจาก</option>
+          <option value="BN">BN - บางนา</option>
+          <option value="BS">BS - บางเสาธง</option>
+          <option value="KS">KS - เกษตร</option>
+          <option value="SR">SR - ศรีนครินทร์</option>
+        </select>
+        <select class="filter-select" id="filter-status" onchange="filterTable()">
+          <option value="">กรองสถานะ</option>
+          <option value="DRAFT">Draft</option>
+          <option value="PENDING_APPROVAL">รออนุมัติ</option>
+          <option value="APPROVED">อนุมัติแล้ว</option>
+          <option value="RETURNED">ตีกลับ</option>
+          <option value="SENT_TO_CASHIER">ส่งแคชเชียร์</option>
+          <option value="SENT_TO_ADMIN">ส่ง Admin</option>
+          <option value="FINANCE_PROCESSING">รอสินเชื่อ</option>
+          <option value="FINANCE_APPROVED">สินเชื่ออนุมัติ</option>
+          <option value="FINANCE_REJECTED">สินเชื่อปฏิเสธ</option>
+          <option value="DELIVERED">ออกรถแล้ว</option>
+        </select>
+        <div class="toolbar-right">
+          <button class="btn btn-ghost" onclick="loadOrders()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            รีเฟรช
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>เลขที่คำขอ</th>
+              <th>ประเภทคำขอ</th>
+              <th>เลขเครื่อง / รุ่น</th>
+              <th>ชื่อลูกค้า</th>
+              <th>สาขา / SC</th>
+              <th>วันที่สร้าง</th>
+              <th>สถานะปัจจุบัน</th>
+              <th>ผู้ดำเนินการล่าสุด</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody">
+            <tr class="loading-row">
+              <td colspan="9">
+                <span class="spinner"></span> กำลังโหลดข้อมูล...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination">
+        <span class="page-info" id="page-info">กำลังโหลด...</span>
+        <div class="page-btns" id="page-btns"></div>
+      </div>
+    </div>
+
+    <!-- WORKFLOW -->
+    <div class="workflow-section">
+      <div class="workflow-title">เส้นทางสถานะคำขอ</div>
+      <div class="workflow-steps">
+        <div class="wf-step step1">
+          <div class="wf-icon">📋</div>
+          <div class="wf-name">ทำใบคำขอ</div>
+          <div class="wf-desc">พนักงานขายกรอกข้อมูล สร้างใบคำขอ</div>
+        </div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step step2">
+          <div class="wf-icon">✅</div>
+          <div class="wf-name">อนุมัติคำขอ</div>
+          <div class="wf-desc">ผู้จัดการสาขาตรวจสอบและอนุมัติ</div>
+        </div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step step3">
+          <div class="wf-icon">📤</div>
+          <div class="wf-name">ส่งใบคำขอ</div>
+          <div class="wf-desc">แคชเชียร์ส่งต่อธุรการขาย (สำนักงานใหญ่)</div>
+        </div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step step4">
+          <div class="wf-icon">🏦</div>
+          <div class="wf-name">ทำใบขอสินเชื่อ</div>
+          <div class="wf-desc">ส่งข้อมูลให้ฝ่ายผ่อนชำระ</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ─── CONFIG ───
+const SUPABASE_URL = 'https://ndyqnuyijgcqxktqilwj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5keXFudXlpamdjcXhrdHFpbHdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MjY4ODIsImV4cCI6MjA5NjMwMjg4Mn0.PW-WZh5h-QnXiAnJrQYej3RnQKAXoh3jU15vU7KO1oU';
+const HDR = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+
+// ─── STATE ───
+let ALL_ORDERS = [];
+let CURRENT_TAB = 'all';
+let CURRENT_PAGE = 1;
+const PAGE_SIZE = 15;
+
+// ─── INIT ───
+window.onload = () => { loadOrders(); };
+
+// ─── LOAD DATA ───
+async function loadOrders() {
+  showLoading();
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/sales_orders?select=*&order=created_at.desc&limit=200`;
+    const res = await fetch(url, { headers: HDR });
+    if (!res.ok) throw new Error(await res.text());
+    ALL_ORDERS = await res.json();
+    updateKPIs();
+    updateTabCounts();
+    renderTable();
+    showToast(`โหลด ${ALL_ORDERS.length} รายการ ✅`, 'success');
+  } catch(e) {
+    console.error(e);
+    // Show demo data if Supabase fails
+    ALL_ORDERS = getDemoData();
+    updateKPIs();
+    updateTabCounts();
+    renderTable();
+    showToast('ใช้ข้อมูล Demo (Supabase ไม่พร้อม)', 'info');
+  }
+}
+
+// ─── DEMO DATA ───
+function getDemoData() {
+  return [
+    { id:1, so_number:'BS2506001', branch_code:'BS', sc_code:'A0032', customer_name:'บริษัท ไพรงไลน์ ทรานสปอร์ต จำกัด', model_code:'UUH60', vehicle_color:'SBW', status:'PENDING_APPROVAL', created_at:'2025-05-26T09:15:00Z', updated_at:'2025-05-26T09:15:00Z', crp_amount:1771000, down_payment:225000 },
+    { id:2, so_number:'BS2506002', branch_code:'BS', sc_code:'A1398', customer_name:'ห้างหุ้นส่วน แสงทองการช่าง', model_code:'TSR30', vehicle_color:'BAB', status:'APPROVED', created_at:'2025-05-25T14:30:00Z', updated_at:'2025-05-25T16:00:00Z', crp_amount:1284000, down_payment:150000 },
+    { id:3, so_number:'SR2506001', branch_code:'SR', sc_code:'A0057', customer_name:'บริษัท ซี เอ็น เค การเกษตร จำกัด', model_code:'TSH20', vehicle_color:'SBW', status:'SENT_TO_CASHIER', created_at:'2025-05-24T11:45:00Z', updated_at:'2025-05-24T14:00:00Z', crp_amount:1064000, down_payment:120000 },
+    { id:4, so_number:'BN2506001', branch_code:'BN', sc_code:'A2712', customer_name:'นายวิโรจน์ แก้วทวี', model_code:'TUH20', vehicle_color:'ETR', status:'FINANCE_PROCESSING', created_at:'2025-05-24T10:20:00Z', updated_at:'2025-05-24T13:00:00Z', crp_amount:1759000, down_payment:200000 },
+    { id:5, so_number:'KS2506001', branch_code:'KS', sc_code:'A0055', customer_name:'บริษัท สบายดีโลจิสติกส์ จำกัด', model_code:'TQF20', vehicle_color:'BOS', status:'RETURNED', created_at:'2025-05-23T16:05:00Z', updated_at:'2025-05-23T17:00:00Z', crp_amount:959000, down_payment:100000 },
+    { id:6, so_number:'BS2506003', branch_code:'BS', sc_code:'A3499', customer_name:'นางสาวพิมพ์ใจ วงศ์สวัสดิ์', model_code:'UUK20', vehicle_color:'DWP', status:'DRAFT', created_at:'2025-05-23T09:00:00Z', updated_at:'2025-05-23T09:00:00Z', crp_amount:1654000, down_payment:0 },
+    { id:7, so_number:'SR2506002', branch_code:'SR', sc_code:'A1807', customer_name:'นายสมชาย รักดี', model_code:'USA20', vehicle_color:'ELG', status:'SENT_TO_ADMIN', created_at:'2025-05-22T10:00:00Z', updated_at:'2025-05-22T14:00:00Z', crp_amount:885000, down_payment:90000 },
+    { id:8, so_number:'BN2506002', branch_code:'BN', sc_code:'A4157', customer_name:'ห้างหุ้นส่วนจำกัด อุดมสุข', model_code:'TUL20', vehicle_color:'BAB', status:'FINANCE_APPROVED', created_at:'2025-05-21T11:00:00Z', updated_at:'2025-05-22T09:00:00Z', crp_amount:1554000, down_payment:180000 },
+    { id:9, so_number:'BS2506004', branch_code:'BS', sc_code:'A6424', customer_name:'นายอนันต์ ศรีสุข', model_code:'TSR30', vehicle_color:'IMG', status:'DELIVERED', created_at:'2025-05-20T14:00:00Z', updated_at:'2025-05-21T10:00:00Z', crp_amount:1284000, down_payment:140000 },
+    { id:10, so_number:'KS2506002', branch_code:'KS', sc_code:'A5199', customer_name:'นางมาลี ทองคำ', model_code:'TQB10', vehicle_color:'SBW', status:'PENDING_APPROVAL', created_at:'2025-05-20T09:30:00Z', updated_at:'2025-05-20T09:30:00Z', crp_amount:822000, down_payment:85000 },
+  ];
+}
+
+// ─── KPIs ───
+function updateKPIs() {
+  const total = ALL_ORDERS.length;
+  const pending = ALL_ORDERS.filter(o => ['PENDING_APPROVAL','SENT_TO_CASHIER','SENT_TO_ADMIN','FINANCE_PROCESSING'].includes(o.status)).length;
+  const approved = ALL_ORDERS.filter(o => ['APPROVED','FINANCE_APPROVED','DELIVERED'].includes(o.status)).length;
+  const returned = ALL_ORDERS.filter(o => ['RETURNED','FINANCE_REJECTED'].includes(o.status)).length;
+
+  document.getElementById('kpi-all').textContent = total;
+  document.getElementById('kpi-pending').textContent = pending;
+  document.getElementById('kpi-approved').textContent = approved;
+  document.getElementById('kpi-returned').textContent = returned;
+  document.getElementById('badge-pending').textContent = pending;
+}
+
+// ─── TAB COUNTS ───
+function updateTabCounts() {
+  const counts = {
+    all: ALL_ORDERS.length,
+    form: ALL_ORDERS.filter(o => ['DRAFT','RETURNED'].includes(o.status)).length,
+    pending: ALL_ORDERS.filter(o => o.status === 'PENDING_APPROVAL').length,
+    send: ALL_ORDERS.filter(o => ['APPROVED','SENT_TO_CASHIER','SENT_TO_ADMIN'].includes(o.status)).length,
+    finance: ALL_ORDERS.filter(o => ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED'].includes(o.status)).length,
+  };
+  Object.entries(counts).forEach(([k,v]) => {
+    const el = document.getElementById('tc-'+k);
+    if (el) el.textContent = v;
+  });
+}
+
+// ─── FILTER ───
+function getFilteredOrders() {
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const branch = document.getElementById('filter-branch').value;
+  const status = document.getElementById('filter-status').value;
+
+  return ALL_ORDERS.filter(o => {
+    // Tab filter
+    if (CURRENT_TAB === 'form' && !['DRAFT','RETURNED'].includes(o.status)) return false;
+    if (CURRENT_TAB === 'pending' && o.status !== 'PENDING_APPROVAL') return false;
+    if (CURRENT_TAB === 'send' && !['APPROVED','SENT_TO_CASHIER','SENT_TO_ADMIN'].includes(o.status)) return false;
+    if (CURRENT_TAB === 'finance' && !['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED'].includes(o.status)) return false;
+    // Search
+    if (search && !(
+      (o.so_number||'').toLowerCase().includes(search) ||
+      (o.customer_name||'').toLowerCase().includes(search) ||
+      (o.model_code||'').toLowerCase().includes(search) ||
+      (o.sc_code||'').toLowerCase().includes(search)
+    )) return false;
+    // Branch
+    if (branch && o.branch_code !== branch) return false;
+    // Status
+    if (status && o.status !== status) return false;
+    return true;
+  });
+}
+
+function filterByTab(tab) {
+  CURRENT_TAB = tab;
+  CURRENT_PAGE = 1;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  renderTable();
+}
+
+function filterTable() {
+  CURRENT_PAGE = 1;
+  renderTable();
+}
+
+// ─── RENDER TABLE ───
+function renderTable() {
+  const filtered = getFilteredOrders();
+  const total = filtered.length;
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+  const paged = filtered.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('orders-tbody');
+
+  if (paged.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>ไม่พบรายการที่ตรงกับการค้นหา</p>
+    </div></td></tr>`;
+  } else {
+    tbody.innerHTML = paged.map(o => renderRow(o)).join('');
+  }
+
+  // Pagination
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('page-info').textContent = `แสดง ${Math.min(start+1,total)}–${Math.min(start+PAGE_SIZE,total)} จาก ${total} รายการ`;
+  const pageBtns = document.getElementById('page-btns');
+  pageBtns.innerHTML = '';
+  for (let i = 1; i <= Math.min(pages, 7); i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === CURRENT_PAGE ? ' active' : '');
+    btn.textContent = i;
+    btn.onclick = () => { CURRENT_PAGE = i; renderTable(); };
+    pageBtns.appendChild(btn);
+  }
+}
+
+function renderRow(o) {
+  const { badge, label } = getStatusBadge(o.status);
+  const { typeBadge, typeLabel } = getTypeBadge(o.status);
+  const date = formatDate(o.created_at);
+  const so = o.so_number || `#${o.id}`;
+  const crp = o.crp_amount ? '฿' + Number(o.crp_amount).toLocaleString('th-TH') : '—';
+
+  return `<tr>
+    <td>
+      <div class="so-number">${so}</div>
+      <div style="font-size:11px;color:var(--g500);margin-top:1px">${crp}</div>
+    </td>
+    <td><span class="type-badge ${typeBadge}">${typeLabel}</span></td>
+    <td>
+      <div style="font-weight:600;font-size:13px;color:var(--g800)">${o.model_code || '—'}</div>
+      <div class="model-info">${o.vehicle_color || ''}</div>
+    </td>
+    <td>
+      <div class="customer-name">${o.customer_name || '—'}</div>
+    </td>
+    <td>
+      <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${o.branch_code || '—'}</div>
+      <div style="font-size:11px;color:var(--g500)">${o.sc_code || ''}</div>
+    </td>
+    <td>
+      <div class="date-text">${date.d}</div>
+      <div class="time-text">${date.t}</div>
+    </td>
+    <td><span class="badge ${badge}">${label}</span></td>
+    <td>
+      <div class="officer-name">${o.sc_code || '—'}</div>
+      <div class="officer-role">พนักงานขาย</div>
+    </td>
+    <td>
+      <div style="display:flex;gap:6px">
+        <button class="action-btn" title="ดูรายละเอียด" onclick="viewOrder(${o.id})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="action-btn primary" title="แก้ไข / ดำเนินการ" onclick="editOrder(${o.id})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ─── BADGE HELPERS ───
+function getStatusBadge(status) {
+  const map = {
+    DRAFT:               { badge:'badge-draft',    label:'Draft - แบบร่าง' },
+    PENDING_APPROVAL:    { badge:'badge-pending',  label:'รอส่งใบคำขอ (ยังไม่อนุมัติ)' },
+    APPROVED:            { badge:'badge-approved', label:'อนุมัติแล้ว' },
+    RETURNED:            { badge:'badge-returned', label:'ไม่อนุมัติ (เหตุผลไม่ครบ)' },
+    SENT_TO_CASHIER:     { badge:'badge-cashier',  label:'ส่งแล้ว รอธุรการขาย' },
+    SENT_TO_ADMIN:       { badge:'badge-admin',    label:'ส่ง Admin แล้ว' },
+    FINANCE_PROCESSING:  { badge:'badge-finance',  label:'รอส่งสินเชื่อ' },
+    FINANCE_APPROVED:    { badge:'badge-approved', label:'สินเชื่ออนุมัติ' },
+    FINANCE_REJECTED:    { badge:'badge-returned', label:'สินเชื่อปฏิเสธ' },
+    DELIVERED:           { badge:'badge-delivered',label:'ออกรถแล้ว' },
+  };
+  return map[status] || { badge:'badge-draft', label: status || '—' };
+}
+
+function getTypeBadge(status) {
+  if (['DRAFT','RETURNED'].includes(status))
+    return { typeBadge:'type-form', typeLabel:'ทำใบคำขอ' };
+  if (status === 'PENDING_APPROVAL')
+    return { typeBadge:'type-approve', typeLabel:'อนุมัติคำขอ' };
+  if (['APPROVED','SENT_TO_CASHIER','SENT_TO_ADMIN'].includes(status))
+    return { typeBadge:'type-send', typeLabel:'ส่งใบคำขอ' };
+  if (['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED'].includes(status))
+    return { typeBadge:'type-finance', typeLabel:'ทำใบขอสินเชื่อ' };
+  return { typeBadge:'type-form', typeLabel:'ทำใบคำขอ' };
+}
+
+// ─── DATE FORMAT ───
+function formatDate(str) {
+  if (!str) return { d:'—', t:'' };
+  const d = new Date(str);
+  const thDate = d.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+  const thTime = d.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.';
+  return { d: thDate, t: thTime };
+}
+
+// ─── ACTIONS ───
+function viewOrder(id) {
+  showToast(`ดูรายละเอียด SO #${id}`, 'info');
+}
+function editOrder(id) {
+  window.open('index_form.html?id=' + id, '_blank');
+}
+
+// ─── LOADING ───
+function showLoading() {
+  document.getElementById('orders-tbody').innerHTML =
+    `<tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลดข้อมูล...</td></tr>`;
+}
+
+// ─── TOAST ───
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast toast-${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
