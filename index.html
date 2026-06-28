@@ -722,37 +722,39 @@ let CURRENT_PAGE = 1;
 const PAGE_SIZE = 15;
 
 // ─── INIT ───
-window.onload = () => { 
-  loadOrders();
-  // Auto-open tab from URL param เช่น index.html?tab=listso
+window.onload = async () => {
+  await loadOrders();
+  // Auto-open tab from URL param หลังโหลดเสร็จ
   const urlTab = new URLSearchParams(window.location.search).get('tab');
-  if (urlTab) setTimeout(() => filterByTab(urlTab), 500);
+  if (urlTab) filterByTab(urlTab);
 };
 
 // ─── LOAD DATA ───
 async function loadOrders() {
-  showLoading();
+  // แสดง Demo ทันทีก่อน เพื่อไม่ให้หมุนนาน
+  ALL_ORDERS = getDemoData();
+  updateKPIs();
+  updateTabCounts();
+  renderTable();
+
+  // แล้วค่อย fetch จาก Supabase จริง
   try {
     const url = `${SUPABASE_URL}/rest/v1/sales_orders?select=*&order=created_at.desc&limit=200`;
     const res = await fetch(url, { headers: HDR });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
-    // ถ้าไม่มีข้อมูลจริง ใช้ Demo
-    ALL_ORDERS = data.length > 0 ? data : getDemoData();
-    const msg = data.length > 0
-      ? `โหลด ${ALL_ORDERS.length} รายการ ✅`
-      : 'ยังไม่มีข้อมูลใบขาย — แสดงตัวอย่าง Demo';
-    updateKPIs();
-    updateTabCounts();
-    renderTable();
-    showToast(msg, data.length > 0 ? 'success' : 'info');
+    if (data.length > 0) {
+      ALL_ORDERS = data;
+      updateKPIs();
+      updateTabCounts();
+      renderTable();
+      showToast(`โหลด ${ALL_ORDERS.length} รายการจาก DB ✅`, 'success');
+    } else {
+      showToast('DB ว่าง — แสดงข้อมูล Demo', 'info');
+    }
   } catch(e) {
-    console.error(e);
-    ALL_ORDERS = getDemoData();
-    updateKPIs();
-    updateTabCounts();
-    renderTable();
-    showToast('ใช้ข้อมูล Demo (Supabase ไม่พร้อม)', 'info');
+    console.error('loadOrders error:', e);
+    showToast('ใช้ข้อมูล Demo (เชื่อม Supabase ไม่ได้)', 'info');
   }
 }
 
@@ -1049,14 +1051,19 @@ function filterByTab(tab) {
     if (kpiGrid) kpiGrid.style.display = 'none';
     if (financePanel) financePanel.classList.add('active');
     loadFinanceList();
+    // Load iframe — force load every time tab is clicked
     const iframe = document.getElementById('finance-iframe');
-    if (!financeLoaded) {
-      financeLoaded = true;
-      if (iframe) iframe.src = FINANCE_URL;
-    } else {
-      const loading = document.getElementById('iframe-loading');
-      if (loading) loading.style.display = 'none';
-      if (iframe) iframe.style.display = 'block';
+    const loading = document.getElementById('iframe-loading');
+    if (iframe) {
+      if (!financeLoaded) {
+        financeLoaded = true;
+        if (loading) loading.style.display = 'flex';
+        iframe.style.display = 'none';
+        iframe.src = FINANCE_URL;
+      } else {
+        if (loading) loading.style.display = 'none';
+        iframe.style.display = 'block';
+      }
     }
   } else {
     if (listCard) listCard.style.display = 'block';
@@ -1338,8 +1345,7 @@ function copyOrderText() {
     `ไฟแนนซ์: ${o.finance_provider_code||'—'}`,
     ``,
     `สถานะ: ${getStatusBadge(o.status).label}`,
-  ].join('
-');
+  ].join('\n');
 
   navigator.clipboard.writeText(text).then(() => {
     showToast('✅ Copy ข้อมูลแล้ว', 'success');
