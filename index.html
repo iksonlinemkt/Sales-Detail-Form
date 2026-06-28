@@ -320,7 +320,7 @@ textarea{resize:vertical;min-height:60px;}
       <select id="sc-code" onchange="onSCChange()">
         <option value="">— เลือก SC —</option>
       </select>
-      <div class="sc-info" id="sc-name-display">—</div>
+      <div class="sc-info" id="sc-name-display" style="min-height:0;"></div>
     </div>
     <div class="field-group">
       <label>วันที่ขาย <span class="req">*</span></label>
@@ -1183,7 +1183,14 @@ async function onBranchChange() {
 function onSCChange() {
   const sel = document.getElementById('sc-code');
   const opt = sel.selectedOptions[0];
-  document.getElementById('sc-name-display').textContent = opt?.dataset?.name || '—';
+  const disp = document.getElementById('sc-name-display');
+  if (opt?.dataset?.name) {
+    disp.textContent = opt.dataset.name;
+    disp.style.display = 'block';
+  } else {
+    disp.textContent = '';
+    disp.style.display = 'none';
+  }
 }
 
 function onModelChange() {
