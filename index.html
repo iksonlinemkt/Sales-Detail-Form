@@ -698,7 +698,7 @@ tbody tr:last-child{border-bottom:none;}
           src="about:blank"
           class="finance-iframe"
           style="display:none"
-          onload="onIframeLoad()"
+          onload="document.getElementById('iframe-loading').style.display='none';this.style.display='block';"
           title="IKS Finance App">
         </iframe>
       </div>
