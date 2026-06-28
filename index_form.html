@@ -303,7 +303,11 @@ textarea{resize:vertical;min-height:60px;}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     ทำใบคำขอ
   </a>
-  <a class="s-item" href="index.html#finance">
+  <a class="s-item" href="index.html?tab=listso">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    List ใบคำขอ
+  </a>
+  <a class="s-item" href="index.html?tab=finance">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     ทำใบขอสินเชื่อ
   </a>
@@ -415,7 +419,11 @@ textarea{resize:vertical;min-height:60px;}
     </div>
     <div class="field-group">
       <label>สถานะ</label>
-      <div style="padding:8px 10px;background:var(--gray-100);border-radius:6px;font-size:12px;color:var(--gray-600);min-height:38px;display:flex;align-items:center;" id="status-label-display">DRAFT</div>
+      <div style="padding:8px 10px;background:var(--gray-100);border-radius:6px;font-size:12px;color:var(--gray-600);min-height:38px;display:flex;align-items:center;gap:8px;" id="status-label-display">
+        DRAFT
+        <span id="edit-count-display" style="display:none;background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;"></span>
+      </div>
+      <input type="hidden" id="edit-count-hidden" value="0">
     </div>
   </div>
 </div>
@@ -1533,6 +1541,9 @@ async function saveOrder(status = null) {
   try {
     let result;
     if (CURRENT_SO_ID) {
+      // increment edit count
+      const currentCount = parseInt(document.getElementById('edit-count-hidden')?.value || 0);
+      data.edit_count = currentCount + 1;
       const updated = await dbUpdate('sales_orders', CURRENT_SO_ID, data);
       const error = null;
       if (error) throw new Error(JSON.stringify(error));
@@ -1752,6 +1763,13 @@ function updateStatusDisplay(order) {
   const pill = document.getElementById('status-pill');
   pill.textContent = STATUS_LABELS[order.status] || order.status;
   pill.className = `status-pill status-${order.status}`;
+  // แสดง edit count
+  if (order.edit_count > 0) {
+    const ec = document.getElementById('edit-count-display');
+    const eh = document.getElementById('edit-count-hidden');
+    if (ec) { ec.textContent = `แก้ไข #${order.edit_count}`; ec.style.display = 'inline'; }
+    if (eh) eh.value = order.edit_count;
+  }
   // แสดง/ซ่อนปุ่มส่งสินเชื่อตามสถานะ
   const financeBtn = document.getElementById('btn-send-finance');
   const doneStatuses = ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED','DELIVERED'];
