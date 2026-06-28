@@ -524,7 +524,7 @@ tbody tr:last-child{border-bottom:none;}
     </div>
 
     <!-- LIST CARD -->
-    <div class="list-card">
+    <div class="list-card" id="main-list-card">
       <div class="list-header">
         <span class="list-header-title">รายการคำขอ</span>
         <button class="btn btn-primary" onclick="window.open('index_form.html','_blank')">
@@ -736,19 +736,16 @@ async function loadOrders() {
     const url = `${SUPABASE_URL}/rest/v1/sales_orders?select=*&order=created_at.desc&limit=200`;
     const res = await fetch(url, { headers: HDR });
     if (!res.ok) throw new Error(await res.text());
-    ALL_ORDERS = await res.json();
+    const data = await res.json();
+    // ถ้าไม่มีข้อมูลจริง ใช้ Demo
+    ALL_ORDERS = data.length > 0 ? data : getDemoData();
+    const msg = data.length > 0
+      ? `โหลด ${ALL_ORDERS.length} รายการ ✅`
+      : 'ยังไม่มีข้อมูลใบขาย — แสดงตัวอย่าง Demo';
     updateKPIs();
     updateTabCounts();
     renderTable();
-    if (ALL_ORDERS.length === 0) {
-      ALL_ORDERS = getDemoData();
-      showToast('ยังไม่มีข้อมูลใบขาย — แสดงตัวอย่าง Demo', 'info');
-    } else {
-      showToast(`โหลด ${ALL_ORDERS.length} รายการ ✅`, 'success');
-    }
-    updateKPIs();
-    updateTabCounts();
-    renderTable();
+    showToast(msg, data.length > 0 ? 'success' : 'info');
   } catch(e) {
     console.error(e);
     ALL_ORDERS = getDemoData();
@@ -1026,46 +1023,45 @@ function filterByTab(tab) {
 
   const financePanel = document.getElementById('finance-panel');
   const listsoPanel = document.getElementById('listso-panel');
-  const listCard = document.querySelector('.list-card');
+  const listCard = document.getElementById('main-list-card');
   const workflowSection = document.querySelector('.workflow-section');
   const kpiGrid = document.querySelector('.kpi-grid');
 
-  // Hide all panels first
+  // Reset all
   if (financePanel) financePanel.classList.remove('active');
   if (listsoPanel) listsoPanel.style.display = 'none';
+  if (listCard) listCard.style.display = 'block';
+  if (workflowSection) workflowSection.style.display = 'block';
+  if (kpiGrid) kpiGrid.style.display = 'grid';
 
   if (tab === 'listso') {
-    listCard.style.display = 'none';
+    if (listCard) listCard.style.display = 'none';
     if (workflowSection) workflowSection.style.display = 'none';
-    kpiGrid.style.display = 'none';
-    listsoPanel.style.display = 'block';
+    if (kpiGrid) kpiGrid.style.display = 'none';
+    if (listsoPanel) listsoPanel.style.display = 'block';
     loadListSO();
     return;
   }
 
   if (tab === 'finance') {
-    // Show finance iframe — sidebar stays (it's position:fixed)
-    financePanel.classList.add('active');
-    listCard.style.display = 'none';
+    if (listCard) listCard.style.display = 'none';
     if (workflowSection) workflowSection.style.display = 'none';
-    kpiGrid.style.display = 'none';
-
-    // Load finance list
+    if (kpiGrid) kpiGrid.style.display = 'none';
+    if (financePanel) financePanel.classList.add('active');
     loadFinanceList();
-    // Load iframe
     const iframe = document.getElementById('finance-iframe');
     if (!financeLoaded) {
       financeLoaded = true;
-      iframe.src = FINANCE_URL;
+      if (iframe) iframe.src = FINANCE_URL;
     } else {
-      document.getElementById('iframe-loading').style.display = 'none';
-      iframe.style.display = 'block';
+      const loading = document.getElementById('iframe-loading');
+      if (loading) loading.style.display = 'none';
+      if (iframe) iframe.style.display = 'block';
     }
   } else {
-    // Show normal list
-    listCard.style.display = 'block';
+    if (listCard) listCard.style.display = 'block';
     if (workflowSection) workflowSection.style.display = 'block';
-    kpiGrid.style.display = 'grid';
+    if (kpiGrid) kpiGrid.style.display = 'grid';
     renderTable();
   }
 }
