@@ -309,6 +309,15 @@ tbody tr:last-child{border-bottom:none;}
 }
 .iframe-loading .spinner{width:36px;height:36px;border-width:4px;}
 
+/* SUB-TABS */
+.sub-tabs{display:flex;gap:4px;padding:14px 20px 0;border-bottom:1px solid var(--g200);background:var(--g50);}
+.sub-tab{padding:8px 20px;border-radius:8px 8px 0 0;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--g500);transition:all .15s;border-bottom:3px solid transparent;font-family:var(--font);}
+.sub-tab:hover{color:var(--navy);background:var(--g100);}
+.sub-tab.active{color:var(--navy);background:white;border-bottom-color:var(--blue);border-bottom-width:3px;}
+.sub-panel{display:none;padding:20px;}
+.sub-panel.active{display:block;}
+.sub-panel.iframe-panel{padding:0;}
+
 /* VIEW MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-box{background:white;border-radius:12px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
@@ -655,52 +664,77 @@ tbody tr:last-child{border-bottom:none;}
 
     <!-- FINANCE PANEL -->
     <div id="finance-panel" class="finance-panel">
-      <!-- ส่วนที่ 1: รายการใบขายที่ส่งสินเชื่อ -->
-      <div class="list-card" style="margin-bottom:20px;">
-        <div class="list-header">
-          <span class="list-header-title">🏦 รายการใบขายที่ส่งสินเชื่อแล้ว</span>
-          <span style="font-size:12px;color:var(--g500)">สถานะ: ส่งสินเชื่อ / อนุมัติ / ปฏิเสธ</span>
+      <!-- Sub-tab header -->
+      <div style="background:white;border-radius:var(--radius) var(--radius) 0 0;box-shadow:var(--shadow);overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);">🏦 ทำใบขอสินเชื่อ</div>
+          <span style="font-size:12px;color:var(--g500);">ข้อมูลจาก Sales Order → Finance App</span>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>SO# / Case ID</th><th>ลูกค้า</th><th>รุ่นรถ</th>
-                <th>ไฟแนนซ์</th><th>ยอดจัด</th><th>ผ่อน/เดือน</th>
-                <th>วันที่ส่ง</th><th>สถานะ</th><th>จัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="finance-list-tbody">
-              <tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลด...</td></tr>
-            </tbody>
-          </table>
+        <div class="sub-tabs">
+          <button class="sub-tab active" id="st-list" onclick="switchSubTab('list')">
+            📋 รายการส่งสินเชื่อ
+          </button>
+          <button class="sub-tab" id="st-app" onclick="switchSubTab('app')">
+            🏦 Finance App
+          </button>
         </div>
       </div>
 
-      <!-- ส่วนที่ 2: iframe Finance App -->
-      <div class="finance-iframe-wrap">
-        <div class="finance-iframe-header">
-          <div class="finance-iframe-title">
-            🏦 IKS Finance App — จัดการสินเชื่อ
+      <!-- Sub-panel 1: รายการ -->
+      <div id="sp-list" class="sub-panel active" style="padding:0;">
+        <div style="background:white;border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow);overflow:hidden;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SO# / Case ID</th>
+                  <th>ลูกค้า</th>
+                  <th>รุ่นรถ / สี</th>
+                  <th>ไฟแนนซ์</th>
+                  <th>ยอดจัด</th>
+                  <th>ผ่อน/เดือน</th>
+                  <th>วันที่ส่ง</th>
+                  <th>สถานะสินเชื่อ</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="finance-list-tbody">
+                <tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
           </div>
-          <div class="finance-iframe-actions">
-            <button class="iframe-btn" onclick="reloadFinanceFrame()">🔄 รีโหลด</button>
-            <button class="iframe-btn" onclick="openFinanceNewTab()">↗ เปิดแท็บใหม่</button>
-            <button class="iframe-btn" onclick="toggleFullscreen()">⛶ เต็มจอ</button>
+          <div style="padding:10px 20px;background:var(--g50);border-top:1px solid var(--g200);font-size:12px;color:var(--g500);">
+            💡 กดปุ่ม <strong>🏦</strong> เพื่อเปิดรายละเอียด case นั้นใน Finance App ด้านล่าง
           </div>
         </div>
-        <div id="iframe-loading" class="iframe-loading">
-          <div class="spinner"></div>
-          <span>กำลังโหลด Finance App...</span>
+      </div>
+
+      <!-- Sub-panel 2: Finance App iframe -->
+      <div id="sp-app" class="sub-panel iframe-panel">
+        <div class="finance-iframe-wrap" style="border-radius:0 0 var(--radius) var(--radius);">
+          <div class="finance-iframe-header">
+            <div class="finance-iframe-title">
+              🏦 IKS Finance App — จัดการสินเชื่อ
+            </div>
+            <div class="finance-iframe-actions">
+              <button class="iframe-btn" onclick="reloadFinanceFrame()">🔄 รีโหลด</button>
+              <button class="iframe-btn" onclick="openFinanceNewTab()">↗ เปิดแท็บใหม่</button>
+              <button class="iframe-btn" onclick="toggleFullscreen()">⛶ เต็มจอ</button>
+            </div>
+          </div>
+          <div id="iframe-loading" class="iframe-loading">
+            <div class="spinner"></div>
+            <span>กำลังโหลด Finance App...</span>
+          </div>
+          <iframe
+            id="finance-iframe"
+            src="about:blank"
+            class="finance-iframe"
+            style="display:none"
+            onload="document.getElementById('iframe-loading').style.display='none';this.style.display='block';"
+            title="IKS Finance App">
+          </iframe>
         </div>
-        <iframe
-          id="finance-iframe"
-          src="about:blank"
-          class="finance-iframe"
-          style="display:none"
-          onload="document.getElementById('iframe-loading').style.display='none';this.style.display='block';"
-          title="IKS Finance App">
-        </iframe>
       </div>
     </div>
 
@@ -1043,8 +1077,8 @@ async function loadFinanceList() {
             <button class="action-btn" title="ดู" onclick="viewOrder(${o.id})">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
-            <button class="action-btn primary" title="เปิดใน Finance App" onclick="openInFinance('${o.finance_case_id||''}')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <button class="action-btn primary" title="เปิดใน Finance App" onclick="openInFinanceApp('${o.finance_case_id||''}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </button>
           </div>
         </td>
@@ -1057,11 +1091,7 @@ async function loadFinanceList() {
 }
 
 function openInFinance(caseId) {
-  if (caseId) {
-    window.open(`https://iks-finance.vercel.app?case=${caseId}`, '_blank');
-  } else {
-    openFinanceNewTab();
-  }
+  openInFinanceApp(caseId);
 }
 
 function filterByTab(tab) {
@@ -1101,21 +1131,10 @@ function filterByTab(tab) {
     if (workflowSection) workflowSection.style.display = 'none';
     if (kpiGrid) kpiGrid.style.display = 'none';
     if (financePanel) financePanel.classList.add('active');
+    switchSubTab('list'); // Reset to list sub-tab
     loadFinanceList();
-    // Load iframe — force load every time tab is clicked
-    const iframe = document.getElementById('finance-iframe');
-    const loading = document.getElementById('iframe-loading');
-    if (iframe) {
-      if (!financeLoaded) {
-        financeLoaded = true;
-        if (loading) loading.style.display = 'flex';
-        iframe.style.display = 'none';
-        iframe.src = FINANCE_URL;
-      } else {
-        if (loading) loading.style.display = 'none';
-        iframe.style.display = 'block';
-      }
-    }
+    // Load iframe on demand (only when user clicks Finance App sub-tab)
+    // iframe loads on demand when user clicks Finance App sub-tab
   } else {
     if (listCard) listCard.style.display = 'block';
     if (workflowSection) workflowSection.style.display = 'block';
@@ -1132,6 +1151,35 @@ function onIframeLoad() {
 function onIframeError() {
   document.getElementById('iframe-loading').innerHTML =
     '<div style="text-align:center"><div style="font-size:32px;margin-bottom:8px">⚠️</div><p style="color:var(--red);font-weight:600">โหลด Finance App ไม่ได้</p><p style="color:var(--g500);font-size:12px;margin-top:4px">กรุณาเปิดแท็บใหม่แทน</p><button class="btn btn-primary" onclick="openFinanceNewTab()" style="margin-top:12px">↗ เปิดแท็บใหม่</button></div>';
+}
+
+function switchSubTab(tab) {
+  // Update sub-tab buttons
+  document.getElementById('st-list')?.classList.toggle('active', tab === 'list');
+  document.getElementById('st-app')?.classList.toggle('active', tab === 'app');
+  // Update sub-panels
+  document.getElementById('sp-list')?.classList.toggle('active', tab === 'list');
+  document.getElementById('sp-app')?.classList.toggle('active', tab === 'app');
+  // Load iframe when switching to app tab
+  if (tab === 'app' && !financeLoaded) {
+    financeLoaded = true;
+    const iframe = document.getElementById('finance-iframe');
+    if (iframe) iframe.src = FINANCE_URL;
+  }
+}
+
+function openInFinanceApp(caseId) {
+  // Switch to app sub-tab
+  switchSubTab('app');
+  // Load iframe with case
+  const iframe = document.getElementById('finance-iframe');
+  const loading = document.getElementById('iframe-loading');
+  if (iframe) {
+    if (loading) { loading.style.display = 'flex'; }
+    iframe.style.display = 'none';
+    iframe.src = caseId ? `${FINANCE_URL}?case=${caseId}` : FINANCE_URL;
+    financeLoaded = true;
+  }
 }
 
 function reloadFinanceFrame() {
