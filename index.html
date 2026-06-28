@@ -740,6 +740,71 @@ function getFilteredOrders() {
 const FINANCE_URL = 'https://iks-finance.vercel.app';
 let financeLoaded = false;
 
+async function loadFinanceList() {
+  const tbody = document.getElementById('finance-list-tbody');
+  if (!tbody) return;
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/sales_orders?select=*&status=in.(FINANCE_PROCESSING,FINANCE_APPROVED,FINANCE_REJECTED)&order=updated_at.desc`;
+    const res = await fetch(url, { headers: HDR });
+    const orders = res.ok ? await res.json() : [];
+    const list = orders.length > 0 ? orders : ALL_ORDERS.filter(o =>
+      ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED'].includes(o.status)
+    );
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <p>ยังไม่มีรายการส่งสินเชื่อ</p>
+      </div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(o => {
+      const { badge, label } = getStatusBadge(o.status);
+      const date = formatDate(o.updated_at || o.created_at);
+      const finAmt = o.crp_amount && o.down_payment
+        ? Math.max(0, (o.invoice_amount || o.crp_amount) - (o.down_payment||0) - (o.down_discount||0) - (o.sub_down||0))
+        : 0;
+      const monthly = o.monthly_payment || 0;
+      return `<tr>
+        <td>
+          <div class="so-number">${o.so_number || '#'+o.id}</div>
+          <div style="font-size:11px;color:var(--g500)">${o.finance_case_id || '—'}</div>
+        </td>
+        <td><div class="customer-name">${o.customer_name||'—'}</div></td>
+        <td>
+          <div style="font-weight:600;font-size:13px">${o.model_code||'—'}</div>
+          <div style="font-size:11px;color:var(--g500)">${o.vehicle_color||''}</div>
+        </td>
+        <td><div style="font-size:12.5px;font-weight:600;color:var(--navy)">${o.finance_provider_code||'—'}</div></td>
+        <td><div style="font-size:13px;font-weight:700;color:var(--red)">${finAmt>0?'฿'+finAmt.toLocaleString('th-TH',{minimumFractionDigits:0}):'—'}</div></td>
+        <td><div style="font-size:13px;font-weight:700;color:var(--red)">${monthly>0?'฿'+monthly.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</div></td>
+        <td><div class="date-text">${date.d}</div><div class="time-text">${date.t}</div></td>
+        <td><span class="badge ${badge}">${label}</span></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="action-btn" title="ดู" onclick="viewOrder(${o.id})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="action-btn primary" title="เปิดใน Finance App" onclick="openInFinance('${o.finance_case_id||''}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error('loadFinanceList:', e);
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+  }
+}
+
+function openInFinance(caseId) {
+  if (caseId) {
+    window.open(`https://iks-finance.vercel.app?case=${caseId}`, '_blank');
+  } else {
+    openFinanceNewTab();
+  }
+}
+
 function filterByTab(tab) {
   CURRENT_TAB = tab;
   CURRENT_PAGE = 1;
@@ -761,13 +826,14 @@ function filterByTab(tab) {
     if (workflowSection) workflowSection.style.display = 'none';
     kpiGrid.style.display = 'none';
 
+    // Load finance list
+    loadFinanceList();
     // Load iframe
     const iframe = document.getElementById('finance-iframe');
     if (!financeLoaded) {
       financeLoaded = true;
       iframe.src = FINANCE_URL;
     } else {
-      // Already loaded — just make sure it's visible
       document.getElementById('iframe-loading').style.display = 'none';
       iframe.style.display = 'block';
     }
