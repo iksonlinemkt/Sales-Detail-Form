@@ -1886,30 +1886,29 @@ async function sendToFinance() {
       round:            1,
     };
 
-    // Sanitize ALL numeric fields - replace empty string with 0
-    const numericFields = ['car_price','equipment','sub_down_add','discount_crp',
-      'total_car_price','down_real','discount_down','discount_sub_down','total_down',
-      'finance_amount','interest','interest_discount','real_interest','term',
-      'installment','round','edit_count'];
-    numericFields.forEach(field => {
-      if (financeCase[field] === '' || financeCase[field] === null || financeCase[field] === undefined || isNaN(financeCase[field])) {
-        financeCase[field] = 0;
+    // Final sanitize before sending
+    const cleanedCase = {};
+    const numFields = ['car_price','equipment','sub_down_add','discount_crp','total_car_price',
+      'down_real','discount_down','discount_sub_down','total_down','finance_amount',
+      'interest','interest_discount','real_interest','term','installment','round'];
+    Object.keys(financeCase).forEach(k => {
+      const v = financeCase[k];
+      if (numFields.includes(k)) {
+        const parsed = parseFloat(v);
+        cleanedCase[k] = isNaN(parsed) ? 0 : parsed;
       } else {
-        financeCase[field] = parseFloat(financeCase[field]) || 0;
+        // String fields: use null if empty to avoid Supabase type issues
+        cleanedCase[k] = (v === null || v === undefined || v === '') ? null : String(v);
       }
     });
-    // Sanitize string fields - replace null/undefined with ''
-    const stringFields = ['case_id','submit_date','sales_order','branch','sales_code',
-      'sales_name','fin_code','fin_name','com_finance','customer_name','customer_phone',
-      'model_no','selling_name','car_color','insurance','campaign','occupation','note','status'];
-    stringFields.forEach(field => {
-      if (financeCase[field] === null || financeCase[field] === undefined) {
-        financeCase[field] = '';
-      }
+    // Required non-null string fields
+    ['case_id','branch','status'].forEach(k => {
+      if (!cleanedCase[k]) cleanedCase[k] = '';
     });
+    cleanedCase.round = 1;
 
-    console.log('Sending finance_cases:', JSON.stringify(financeCase));
-    await dbInsert('finance_cases', financeCase);
+    console.log('Sending finance_cases:', JSON.stringify(cleanedCase));
+    await dbInsert('finance_cases', cleanedCase);
 
     // Link back to sales_order
     await dbUpdate('sales_orders', CURRENT_SO_ID, { finance_case_id: caseId, status: 'FINANCE_PROCESSING' });
