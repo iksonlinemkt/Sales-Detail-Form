@@ -952,12 +952,14 @@ async function loadFinanceCases() {
 async function loadListSO() {
   const tbody = document.getElementById('listso-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลด...</td></tr>';
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="10"><span class="spinner"></span> กำลังโหลด...</td></tr>`;
 
   await loadFinanceCases();
 
+  // ใช้ ALL_ORDERS ถ้ามี ไม่งั้นใช้ Demo
   LISTSO_ALL = ALL_ORDERS.length > 0 ? ALL_ORDERS : getDemoData();
-  document.getElementById('listso-count').textContent = `${LISTSO_ALL.length} รายการ`;
+  const countEl = document.getElementById('listso-count');
+  if (countEl) countEl.textContent = `${LISTSO_ALL.length} รายการ`;
   renderListSORows(LISTSO_ALL);
 }
 
