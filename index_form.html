@@ -1886,16 +1886,29 @@ async function sendToFinance() {
       round:            1,
     };
 
-    // Debug log
-    console.log('Finance case data:', JSON.stringify(financeCase));
-    // Check for empty string in numeric fields
-    Object.entries(financeCase).forEach(([k,v]) => {
-      if (v === '' && ['car_price','equipment','sub_down_add','discount_crp','total_car_price','down_real','discount_down','discount_sub_down','total_down','finance_amount','interest','interest_discount','real_interest','term','installment'].includes(k)) {
-        console.error(`Empty string in numeric field: ${k}`);
-        financeCase[k] = 0;
+    // Sanitize ALL numeric fields - replace empty string with 0
+    const numericFields = ['car_price','equipment','sub_down_add','discount_crp',
+      'total_car_price','down_real','discount_down','discount_sub_down','total_down',
+      'finance_amount','interest','interest_discount','real_interest','term',
+      'installment','round','edit_count'];
+    numericFields.forEach(field => {
+      if (financeCase[field] === '' || financeCase[field] === null || financeCase[field] === undefined || isNaN(financeCase[field])) {
+        financeCase[field] = 0;
+      } else {
+        financeCase[field] = parseFloat(financeCase[field]) || 0;
+      }
+    });
+    // Sanitize string fields - replace null/undefined with ''
+    const stringFields = ['case_id','submit_date','sales_order','branch','sales_code',
+      'sales_name','fin_code','fin_name','com_finance','customer_name','customer_phone',
+      'model_no','selling_name','car_color','insurance','campaign','occupation','note','status'];
+    stringFields.forEach(field => {
+      if (financeCase[field] === null || financeCase[field] === undefined) {
+        financeCase[field] = '';
       }
     });
 
+    console.log('Sending finance_cases:', JSON.stringify(financeCase));
     await dbInsert('finance_cases', financeCase);
 
     // Link back to sales_order
