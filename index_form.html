@@ -1433,81 +1433,82 @@ function collectFormData() {
   const modelSel = document.getElementById('vehicle-model');
   const modelOpt = modelSel.selectedOptions[0];
   const colorSel = document.getElementById('vehicle-color');
-  const colorOpt = colorSel.selectedOptions[0];
-  const termYears = parseInt(document.getElementById('term-years').value || 5);
-  const invoice = n('invoice-amount') || n('crp-amount');
-  const down = n('down-payment');
+  const colorOpt = colorSel?.selectedOptions[0];
+  const termYears = parseInt(document.getElementById('term-years')?.value || 5);
+  const crp = n('crp-amount');
+  const crpDiscount = n('crp-discount');
   const subDown = n('sub-down');
   const bodyAcc = n('body-acc-amount');
-  const isg = n('isg-amount');
-  const tradeIn = n('trade-in-amount');
+  const downDiscount = n('down-discount');
+  const down = n('down-payment');
+  // ราคาเปิดใบเสร็จ = CRP - ลด CRP + Sub Down + ตู้/หลังคา
+  const invoice = Math.max(0, crp - crpDiscount + subDown + bodyAcc);
   const tableRate = n('table-rate');
-  const rateDiscount = n('rate-discount');
+  const rateDiscount = parseFloat(document.getElementById('rate-discount')?.value || 0);
   const actualRate = Math.max(0, tableRate - rateDiscount);
-  const financeAmount = Math.max(0, invoice - down - subDown - tradeIn - isg + bodyAcc);
+  // ยอดจัด = ราคาเปิดใบเสร็จ - ดาวน์ - ลดดาวน์ - Sub Down
+  const financeAmount = Math.max(0, invoice - down - downDiscount - subDown);
   const monthlyPayment = termYears > 0 && financeAmount > 0
     ? (financeAmount * (1 + (actualRate/100) * termYears)) / (termYears * 12) : 0;
 
   return {
-    branch_code: document.getElementById('branch').value,
-    sc_code: document.getElementById('sc-code').value,
-    ps_bk: document.getElementById('ps-bk').value,
-    sale_date: document.getElementById('sale-date').value,
-    delivery_date: document.getElementById('delivery-date').value || null,
-    customer_name: document.getElementById('customer-name').value.trim(),
-    customer_mobile: document.getElementById('customer-mobile').value.trim(),
-    customer_tax_id: document.getElementById('tax-id').value.trim() || null,
-    customer_address: document.getElementById('address').value.trim() || null,
-    customer_road: document.getElementById('road').value.trim() || null,
-    customer_subdistrict: document.getElementById('subdistrict').value.trim() || null,
-    customer_district: document.getElementById('district').value.trim() || null,
-    customer_province: document.getElementById('province').value || null,
-    customer_postal: document.getElementById('postal').value.trim() || null,
-    customer_birthdate: document.getElementById('birth-date').value || null,
-    customer_line_id: document.getElementById('line-id').value.trim() || null,
-    booking_no: document.getElementById('booking-no').value.trim() || null,
-    booking_date: document.getElementById('booking-date').value || null,
+    branch_code: document.getElementById('branch')?.value || '',
+    sc_code: document.getElementById('sc-code')?.value || '',
+    ps_bk: document.getElementById('ps-bk')?.value || '',
+    sale_date: document.getElementById('sale-date')?.value || '',
+    delivery_date: document.getElementById('delivery-date')?.value || null,
+    customer_name: document.getElementById('customer-name')?.value?.trim() || '',
+    customer_mobile: document.getElementById('customer-mobile')?.value?.trim() || '',
+    customer_tax_id: document.getElementById('tax-id')?.value?.trim() || null,
+    customer_address: document.getElementById('address')?.value?.trim() || null,
+    customer_road: document.getElementById('road')?.value?.trim() || null,
+    customer_subdistrict: document.getElementById('subdistrict')?.value?.trim() || null,
+    customer_district: document.getElementById('district')?.value?.trim() || null,
+    customer_province: document.getElementById('province')?.value || null,
+    customer_postal: document.getElementById('postal')?.value?.trim() || null,
+    customer_birthdate: document.getElementById('birth-date')?.value || null,
+    customer_line_id: document.getElementById('line-id')?.value?.trim() || null,
+    booking_no: document.getElementById('booking-no')?.value?.trim() || null,
+    booking_date: document.getElementById('booking-date')?.value || null,
     booking_amount: n('booking-amount'),
-    purchase_type: document.getElementById('purchase-type').value || null,
-    customer_status: document.getElementById('customer-status').value || null,
-    lead_source: document.getElementById('lead-source').value || null,
+    purchase_type: document.getElementById('purchase-type')?.value || null,
+    customer_status: document.getElementById('customer-status')?.value || null,
+    lead_source: document.getElementById('lead-source')?.value || null,
     model_code: modelOpt?.value || null,
     model_name_snapshot: modelOpt?.dataset?.name || null,
     vehicle_color: colorOpt?.value || null,
     color_name_snapshot: colorOpt?.textContent?.split(' - ')[1] || null,
-    body_color: document.getElementById('body-color').value || null,
+    body_color: document.getElementById('body-color')?.value || null,
     crp_amount: n('crp-amount'),
+    crp_discount: n('crp-discount'),
     invoice_amount: invoice,
     sub_down: subDown,
     body_acc_amount: bodyAcc,
-    isg_amount: isg,
-    trade_in_amount: tradeIn,
-    finance_provider_code: document.getElementById('finance-provider').value || null,
-    finance_program_code: document.getElementById('finance-program').value || null,
-    payment_condition: document.getElementById('payment-cond').value,
+    down_discount: n('down-discount'),
+    finance_provider_code: document.getElementById('finance-provider')?.value || null,
+    finance_program_code: document.getElementById('finance-program')?.value || null,
+    payment_condition: document.getElementById('payment-cond')?.value || null,
     down_payment: down,
     table_rate: tableRate,
-    rate_discount: rateDiscount,
+    rate_discount: parseFloat(document.getElementById('rate-discount')?.value || 0),
     actual_rate: actualRate,
     term_years: termYears,
     monthly_payment: monthlyPayment,
     customer_available_down: n('customer-available-down'),
-    finance_note: document.getElementById('finance-note').value.trim() || null,
+    finance_note: document.getElementById('finance-note')?.value?.trim() || null,
     insurance_amount: n('insurance-amount'),
     registration_amount: n('registration-amount'),
     plate_deposit: n('plate-deposit'),
     other_cost: n('other-amount'),
-    company_discount: n('company-discount'),
-    reg_discount: n('reg-discount'),
-    occupation: document.getElementById('occupation').value || null,
-    income_range: document.getElementById('income-range').value || null,
-    marital_status: document.getElementById('marital-status').value || null,
-    residence_type: document.getElementById('residence-type').value || null,
+    occupation: document.getElementById('occupation')?.value || null,
+    income_range: document.getElementById('income-range')?.value || null,
+    marital_status: document.getElementById('marital-status')?.value || null,
+    residence_type: document.getElementById('residence-type')?.value || null,
     debt_amount: n('debt-amount'),
-    guarantor_name: document.getElementById('guarantor-name').value.trim() || null,
-    co_borrower_name: document.getElementById('co-borrower-name').value.trim() || null,
-    remark: document.getElementById('remark').value.trim() || null,
-    edit_reason: document.getElementById('edit-reason').value || null,
+    guarantor_name: document.getElementById('guarantor-name')?.value?.trim() || null,
+    co_borrower_name: document.getElementById('co-borrower-name')?.value?.trim() || null,
+    remark: document.getElementById('remark')?.value?.trim() || null,
+    edit_reason: document.getElementById('edit-reason')?.value || null,
     status: CURRENT_STATUS,
     updated_at: new Date().toISOString(),
   };
@@ -1542,7 +1543,8 @@ function validateRequired() {
 // ============================================================
 async function saveOrder(status = null) {
   const missing = validateRequired();
-  if (missing.length > 0) {
+  const allowedWithoutValidation = ['DRAFT'];
+  if (missing.length > 0 && !allowedWithoutValidation.includes(status || '')) {
     showToast('กรุณากรอก: ' + missing.join(', '), 'error');
     return null;
   }
@@ -1732,8 +1734,8 @@ async function sendToFinance() {
       case_id:        caseId,
       branch:         branch,
       sales_code:     scCode,
-      customer_name:  document.getElementById('customer-name').value.trim(),
-      phone:          document.getElementById('customer-mobile').value.trim(),
+      customer_name:  document.getElementById('customer-name')?.value?.trim() || '',
+      phone:          document.getElementById('customer-mobile')?.value?.trim() || '',
       finance_company: PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode,
       model:          modelOpt?.value || '',
       color:          colorName,
