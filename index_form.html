@@ -1112,7 +1112,15 @@ async function loadExistingOrder(id) {
     }
     if (o.finance_program_code) setVal('finance-program', o.finance_program_code);
     if (o.term_years) document.getElementById('term-years').value = o.term_years;
-    if (o.rate_discount != null) document.getElementById('rate-discount').value = o.rate_discount;
+    if (o.rate_discount != null) {
+      const rdSel = document.getElementById('rate-discount');
+      if (rdSel) {
+        // rate-discount select options: "0", "0.10", "0.20", "0.30", "0.40"
+        const rdVal = parseFloat(o.rate_discount);
+        const matchingOpt = Array.from(rdSel.options).find(opt => parseFloat(opt.value) === rdVal);
+        rdSel.value = matchingOpt ? matchingOpt.value : '0';
+      }
+    }
 
     // Update status display
     updateStatusDisplay(o);
@@ -1808,9 +1816,9 @@ async function sendToFinance() {
     const bodyAcc = n('body-acc-amount');
     const crpDiscount = n('crp-discount');
     const downDiscount = n('down-discount');
-    const tableRate = n('table-rate');
-    const rateDiscount = n('rate-discount');
-    const actualRate = Math.max(0, tableRate - rateDiscount);
+    const tableRate = parseFloat(document.getElementById('table-rate')?.value || 0);
+    const rateDiscountVal = parseFloat(document.getElementById('rate-discount')?.value || 0);
+    const actualRate = Math.max(0, tableRate - rateDiscountVal);
     const financeAmount = Math.max(0, invoice - down - downDiscount - subDown);
     const monthlyPayment = termYears > 0 && financeAmount > 0
       ? (financeAmount * (1 + (actualRate/100) * termYears)) / (termYears * 12) : 0;
@@ -1859,7 +1867,7 @@ async function sendToFinance() {
       total_down:       safeNum(down + downDiscount + subDown),
       finance_amount:   safeNum(financeAmount),
       interest:         safeNum(tableRate),
-      interest_discount: safeNum(rateDiscount),
+      interest_discount: safeNum(rateDiscountVal),
       real_interest:    safeNum(actualRate),
       term:             safeNum(termYears * 12),
       installment:      safeNum(monthlyPayment),
