@@ -638,10 +638,35 @@ tbody tr:last-child{border-bottom:none;}
 
     <!-- LIST SO PANEL -->
     <div id="listso-panel" style="display:none;margin-bottom:20px;">
-      <div class="list-card">
+      <div class="list-card" id="listso-card">
         <div class="list-header">
           <span class="list-header-title">📋 List ใบคำขอ — สถานะครบวงจร</span>
           <button class="btn btn-ghost btn-sm" onclick="loadListSO()">🔄 รีเฟรช</button>
+        </div>
+        <!-- Search bar -->
+        <div style="padding:12px 20px;border-bottom:1px solid var(--g200);display:flex;gap:10px;align-items:center;background:var(--g50);flex-wrap:wrap;">
+          <div class="search-wrap" style="max-width:300px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="listso-search" placeholder="ค้นหา SO#, ชื่อลูกค้า, รหัส SC..." oninput="filterListSO()" style="font-size:12.5px;">
+          </div>
+          <select id="listso-branch" onchange="filterListSO()" class="filter-select" style="font-size:12.5px;">
+            <option value="">ทุกสาขา</option>
+            <option value="BJ">BJ - บางจาก</option>
+            <option value="BN">BN - บางนา</option>
+            <option value="BS">BS - บางเสาธง</option>
+            <option value="KS">KS - เกษตร</option>
+            <option value="SR">SR - ศรีนครินทร์</option>
+          </select>
+          <select id="listso-status" onchange="filterListSO()" class="filter-select" style="font-size:12.5px;">
+            <option value="">ทุกสถานะ</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PENDING_APPROVAL">รออนุมัติ</option>
+            <option value="APPROVED">อนุมัติแล้ว</option>
+            <option value="RETURNED">ตีกลับ</option>
+            <option value="SENT_TO_CASHIER">ส่งแคชเชียร์</option>
+            <option value="FINANCE_PROCESSING">รอสินเชื่อ</option>
+          </select>
+          <span id="listso-count" style="font-size:12px;color:var(--g500);margin-left:auto;font-weight:600;"></span>
         </div>
         <div class="table-wrap">
           <table>
@@ -649,7 +674,8 @@ tbody tr:last-child{border-bottom:none;}
               <tr>
                 <th>SO# / ลูกค้า</th>
                 <th>รุ่นรถ</th>
-                <th>สาขา / SC</th>
+                <th>สาขา</th>
+                <th>SC / ชื่อเซล</th>
                 <th>วันที่</th>
                 <th style="text-align:center">อนุมัติ (ผจก.)</th>
                 <th style="text-align:center">ส่งสินเชื่อ</th>
@@ -659,7 +685,7 @@ tbody tr:last-child{border-bottom:none;}
               </tr>
             </thead>
             <tbody id="listso-tbody">
-              <tr class="loading-row"><td colspan="9"><span class="spinner"></span> กำลังโหลด...</td></tr>
+              <tr class="loading-row"><td colspan="10"><span class="spinner"></span> กำลังโหลด...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1054,8 +1080,10 @@ let LISTSO_ALL = [];
 function filterListSO() {
   const q = (document.getElementById('listso-search')?.value || '').toLowerCase().trim();
   const branch = document.getElementById('listso-branch')?.value || '';
+  const status = document.getElementById('listso-status')?.value || '';
   const filtered = LISTSO_ALL.filter(o => {
     if (branch && o.branch_code !== branch) return false;
+    if (status && o.status !== status) return false;
     if (q && !(
       (o.so_number||'').toLowerCase().includes(q) ||
       (o.customer_name||'').toLowerCase().includes(q) ||
