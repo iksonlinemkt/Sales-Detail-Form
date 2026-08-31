@@ -1232,16 +1232,41 @@ function switchSubTab(tab) {
 }
 
 function openInFinanceApp(caseId) {
-  // Switch to app sub-tab
+  // Switch to Finance App sub-tab
   switchSubTab('app');
-  // Load iframe with case
+
+  // Load iframe
   const iframe = document.getElementById('finance-iframe');
   const loading = document.getElementById('iframe-loading');
   if (iframe) {
-    if (loading) { loading.style.display = 'flex'; }
+    if (loading) loading.style.display = 'flex';
     iframe.style.display = 'none';
-    iframe.src = caseId ? `${FINANCE_URL}?case=${caseId}` : FINANCE_URL;
+    iframe.src = FINANCE_URL;
     financeLoaded = true;
+  }
+
+  // Show case banner + auto copy
+  if (caseId) {
+    // Copy to clipboard
+    navigator.clipboard?.writeText(caseId).catch(() => {});
+
+    // Show banner above iframe
+    let banner = document.getElementById('finance-case-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'finance-case-banner';
+      banner.style.cssText = 'background:#1565C0;color:white;padding:10px 20px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;';
+      const iframeWrap = document.querySelector('.finance-iframe-wrap');
+      if (iframeWrap) iframeWrap.insertBefore(banner, iframeWrap.querySelector('.finance-iframe-header').nextSibling);
+    }
+    banner.innerHTML = `
+      <span>🔍 ค้นหา Case ID นี้ใน Finance App:</span>
+      <span style="background:white;color:#1565C0;padding:4px 12px;border-radius:6px;font-size:14px;font-weight:800;letter-spacing:1px;">${caseId}</span>
+      <button onclick="navigator.clipboard?.writeText('${caseId}');showToast('Copy ${caseId} แล้ว ✅','success')" style="background:rgba(255,255,255,.2);border:none;color:white;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">📋 Copy</button>
+      <button onclick="this.parentElement.style.display='none'" style="margin-left:auto;background:none;border:none;color:white;cursor:pointer;font-size:16px;">✕</button>
+    `;
+    banner.style.display = 'flex';
+    showToast(`Copy Case ID: ${caseId} แล้ว — ค้นหาใน Finance App ได้เลย`, 'success');
   }
 }
 
