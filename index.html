@@ -437,22 +437,26 @@ tbody tr:last-child{border-bottom:none;}
   </div>
 
   <div class="sidebar-section">ระบบ</div>
-  <a class="nav-item" href="#">
+  <span class="nav-item" style="opacity:.35;cursor:not-allowed;pointer-events:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <span>ค้นหา</span>
-  </a>
-  <a class="nav-item" href="#">
+    <span style="font-size:9px;background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;margin-left:auto;">เร็วๆ นี้</span>
+  </span>
+  <span class="nav-item" style="opacity:.35;cursor:not-allowed;pointer-events:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     <span>รายงาน</span>
-  </a>
-  <a class="nav-item" href="#">
+    <span style="font-size:9px;background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;margin-left:auto;">เร็วๆ นี้</span>
+  </span>
+  <span class="nav-item" style="opacity:.35;cursor:not-allowed;pointer-events:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
     <span>ตั้งค่า</span>
-  </a>
-  <a class="nav-item" href="#">
+    <span style="font-size:9px;background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;margin-left:auto;">เร็วๆ นี้</span>
+  </span>
+  <span class="nav-item" style="opacity:.35;cursor:not-allowed;pointer-events:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     <span>ออกจากระบบ</span>
-  </a>
+    <span style="font-size:9px;background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;margin-left:auto;">เร็วๆ นี้</span>
+  </span>
 
   <div class="sidebar-footer">
     <div class="user-card">
@@ -916,7 +920,7 @@ function getFilteredOrders() {
   });
 }
 
-const FINANCE_URL = 'https://iks-finance.vercel.app';
+const FINANCE_URL = 'https://iks-finance-98hvpilgo-iksmkts-projects.vercel.app/';
 let financeLoaded = false;
 
 // ─── LIST SO ───
@@ -952,12 +956,19 @@ async function loadListSO() {
 
   await loadFinanceCases();
 
-  const orders = ALL_ORDERS.length > 0 ? ALL_ORDERS : getDemoData();
+  LISTSO_ALL = ALL_ORDERS.length > 0 ? ALL_ORDERS : getDemoData();
+  document.getElementById('listso-count').textContent = `${LISTSO_ALL.length} รายการ`;
+  renderListSORows(LISTSO_ALL);
+}
+
+function renderListSORows(orders) {
+  const tbody = document.getElementById('listso-tbody');
+  if (!tbody) return;
+  if (document.getElementById('listso-count')) document.getElementById('listso-count').textContent = `${orders.length} รายการ`;
   if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>ยังไม่มีรายการ</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><p>ไม่พบรายการที่ตรงกับการค้นหา</p></div></td></tr>';
     return;
   }
-
   tbody.innerHTML = orders.map(o => {
     // COL 1: อนุมัติ (ผจก.)
     let approveCell;
@@ -1005,8 +1016,11 @@ async function loadListSO() {
         <div style="font-size:11px;color:var(--g500)">${o.vehicle_color||''}</div>
       </td>
       <td>
-        <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${o.branch_code||'—'}</div>
-        <div style="font-size:11px;color:var(--g500)">${o.sc_code||''}</div>
+        <div style="font-size:12.5px;font-weight:700;color:var(--navy)">${o.branch_code||'—'}</div>
+      </td>
+      <td>
+        <div style="font-size:12.5px;font-weight:600;color:var(--g800)">${o.sc_code||'—'}</div>
+        <div style="font-size:11px;color:var(--g500)">${o.sc_name||o.sales_name||'พนักงานขาย'}</div>
       </td>
       <td><div class="date-text">${date.d}</div><div class="time-text">${date.t}</div></td>
       <td style="text-align:center">${approveCell}</td>
@@ -1031,6 +1045,25 @@ async function loadListSO() {
       </td>
     </tr>`;
   }).join('');
+}
+
+let LISTSO_ALL = [];
+
+function filterListSO() {
+  const q = (document.getElementById('listso-search')?.value || '').toLowerCase().trim();
+  const branch = document.getElementById('listso-branch')?.value || '';
+  const filtered = LISTSO_ALL.filter(o => {
+    if (branch && o.branch_code !== branch) return false;
+    if (q && !(
+      (o.so_number||'').toLowerCase().includes(q) ||
+      (o.customer_name||'').toLowerCase().includes(q) ||
+      (o.sc_code||'').toLowerCase().includes(q) ||
+      (o.sc_name||'').toLowerCase().includes(q) ||
+      (o.model_code||'').toLowerCase().includes(q)
+    )) return false;
+    return true;
+  });
+  renderListSORows(filtered);
 }
 
 async function loadFinanceList() {
