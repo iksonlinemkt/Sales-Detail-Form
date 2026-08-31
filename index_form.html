@@ -1827,37 +1827,43 @@ async function sendToFinance() {
     const colorSel = document.getElementById('vehicle-color');
     const colorOpt = colorSel.selectedOptions[0];
     const colorName = colorOpt?.textContent?.split(' - ')[1] || colorOpt?.value || '';
+    // Helper to get safe numeric value
+    const safeNum = (val) => {
+      const n = parseFloat(val);
+      return isNaN(n) ? 0 : n;
+    };
+
     const financeCase = {
       case_id:          caseId,
       submit_date:      new Date().toISOString().split('T')[0],
       sales_order:      document.getElementById('so-number-display').textContent?.trim() || '',
-      branch:           branch,
-      sales_code:       scCode,
-      sales_name:       document.getElementById('sc-name-display')?.textContent || '',
-      fin_code:         providerCode,
-      fin_name:         PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode,
-      com_finance:      PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode,
+      branch:           branch || '',
+      sales_code:       scCode || '',
+      sales_name:       document.getElementById('sc-name-display')?.textContent?.trim() || '',
+      fin_code:         providerCode || '',
+      fin_name:         PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode || '',
+      com_finance:      PROVIDERS.find(p => p.provider_code === providerCode)?.provider_name || providerCode || '',
       customer_name:    document.getElementById('customer-name')?.value?.trim() || '',
       customer_phone:   document.getElementById('customer-mobile')?.value?.trim() || '',
       model_no:         modelOpt?.value || '',
       selling_name:     modelOpt?.dataset?.name || '',
-      car_color:        colorName,
-      car_price:        n('crp-amount'),
-      equipment:        bodyAcc,
-      sub_down_add:     subDown,
-      discount_crp:     crpDiscount,
-      total_car_price:  Math.max(0, n('crp-amount') - crpDiscount + subDown + bodyAcc),
-      down_real:        down,
-      discount_down:    downDiscount,
-      discount_sub_down: subDown,
-      total_down:       down + downDiscount + subDown,
-      finance_amount:   financeAmount,
-      interest:         tableRate,
-      interest_discount: rateDiscount,
-      real_interest:    actualRate,
-      term:             termYears * 12,
-      installment:      monthlyPayment,
-      insurance:        document.getElementById('finance-program')?.selectedOptions[0]?.textContent || '',
+      car_color:        colorName || '',
+      car_price:        safeNum(n('crp-amount')),
+      equipment:        safeNum(bodyAcc),
+      sub_down_add:     safeNum(subDown),
+      discount_crp:     safeNum(crpDiscount),
+      total_car_price:  safeNum(Math.max(0, n('crp-amount') - crpDiscount + subDown + bodyAcc)),
+      down_real:        safeNum(down),
+      discount_down:    safeNum(downDiscount),
+      discount_sub_down: safeNum(subDown),
+      total_down:       safeNum(down + downDiscount + subDown),
+      finance_amount:   safeNum(financeAmount),
+      interest:         safeNum(tableRate),
+      interest_discount: safeNum(rateDiscount),
+      real_interest:    safeNum(actualRate),
+      term:             safeNum(termYears * 12),
+      installment:      safeNum(monthlyPayment),
+      insurance:        document.getElementById('finance-program')?.selectedOptions[0]?.textContent?.trim() || '',
       campaign:         (() => {
         const camps = [];
         document.querySelectorAll('#campaign-tbody tr').forEach(tr => {
