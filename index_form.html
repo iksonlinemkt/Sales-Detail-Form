@@ -1039,8 +1039,103 @@ async function init() {
   addAddonRow();
   initDateDisplays();
   calcAll();
+
+  // ถ้ามี ?id= ใน URL → โหลด SO เดิมกลับมา
+  const urlId = new URLSearchParams(window.location.search).get('id');
+  if (urlId) {
+    await loadExistingOrder(parseInt(urlId));
+  }
+
   document.getElementById('loading-overlay').style.display = 'none';
   showToast('โหลดข้อมูลสำเร็จ ✅', 'success');
+}
+
+async function loadExistingOrder(id) {
+  try {
+    const data = await dbGet('sales_orders', { id: id });
+    if (!data || data.length === 0) return;
+    const o = data[0];
+    CURRENT_SO_ID = o.id;
+    CURRENT_STATUS = o.status;
+
+    // Fill top row
+    if (o.branch_code) {
+      document.getElementById('branch').value = o.branch_code;
+      await loadSCByBranch(o.branch_code);
+    }
+    if (o.sc_code) document.getElementById('sc-code').value = o.sc_code;
+    if (o.sale_date) document.getElementById('sale-date').value = o.sale_date;
+    if (o.ps_bk) document.getElementById('ps-bk').value = o.ps_bk;
+    if (o.ref_number) document.getElementById('ref-number').value = o.ref_number;
+
+    // Fill customer
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+    setVal('customer-name', o.customer_name);
+    setVal('customer-mobile', o.customer_mobile);
+    setVal('tax-id', o.customer_tax_id || o.tax_id);
+    setVal('address', o.customer_address);
+    setVal('road', o.customer_road);
+    setVal('subdistrict', o.customer_subdistrict);
+    setVal('district', o.customer_district);
+    setVal('province', o.customer_province);
+    setVal('postal', o.customer_postal);
+    setVal('birth-date', o.customer_birthdate);
+    setVal('line-id', o.customer_line_id);
+    setVal('booking-no', o.booking_no);
+    setVal('booking-date', o.booking_date);
+    setVal('booking-amount', o.booking_amount || 0);
+    setVal('delivery-date', o.delivery_date);
+
+    // Fill vehicle
+    if (o.model_code) {
+      document.getElementById('vehicle-model').value = o.model_code;
+      onModelChange();
+    }
+    setVal('vehicle-color', o.vehicle_color);
+    setVal('crp-amount', o.crp_amount || 0);
+    setVal('crp-discount', o.crp_discount || 0);
+    setVal('sub-down', o.sub_down || 0);
+    setVal('body-acc-amount', o.body_acc_amount || 0);
+    setVal('down-payment', o.down_payment || 0);
+    setVal('down-discount', o.down_discount || 0);
+    setVal('table-rate', o.table_rate || 3.05);
+    setVal('insurance-amount', o.insurance_amount || 0);
+    setVal('registration-amount', o.registration_amount || 0);
+    setVal('plate-deposit', o.plate_deposit || 0);
+    setVal('other-amount', o.other_cost || 0);
+    setVal('remark', o.remark);
+
+    // Fill finance
+    if (o.finance_provider_code) {
+      document.getElementById('finance-provider').value = o.finance_provider_code;
+      await loadPrograms(o.finance_provider_code);
+    }
+    if (o.finance_program_code) setVal('finance-program', o.finance_program_code);
+    if (o.term_years) document.getElementById('term-years').value = o.term_years;
+    if (o.rate_discount != null) document.getElementById('rate-discount').value = o.rate_discount;
+
+    // Update status display
+    updateStatusDisplay(o);
+    calcAll();
+
+    // Unlock/lock buttons ตามสถานะ
+    const doneStatuses = ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED','DELIVERED'];
+    const isDone = doneStatuses.includes(o.status);
+    const btnFinance = document.getElementById('btn-send-finance');
+    const btnSubmit = document.getElementById('btn-submit');
+    if (btnFinance) {
+      btnFinance.disabled = isDone;
+      btnFinance.title = isDone ? 'ส่งสินเชื่อแล้ว' : 'ส่งสินเชื่อ';
+    }
+    if (btnSubmit) {
+      btnSubmit.disabled = ['APPROVED','PENDING_APPROVAL'].includes(o.status) || isDone;
+      btnSubmit.title = isDone ? 'ดำเนินการแล้ว' : 'ส่งขออนุมัติ';
+    }
+
+    showToast(`โหลดใบขาย ${o.so_number} ✅ — กดส่งสินเชื่อหรืออนุมัติได้เลย`, 'success');
+  } catch(e) {
+    console.error('loadExistingOrder:', e);
+  }
 }
 
 async function loadBranches() {
@@ -1589,8 +1684,10 @@ async function saveOrder(status = null) {
     showToast(`บันทึกเรียบร้อย — SO: ${result.so_number}`, 'success');
 
     // Unlock ส่งสินเชื่อ/อนุมัติ หลังบันทึกแล้ว
-    document.getElementById('btn-send-finance').disabled = false;
-    document.getElementById('btn-submit').disabled = false;
+    const doneAfterSave = ['FINANCE_PROCESSING','FINANCE_APPROVED','FINANCE_REJECTED','DELIVERED'];
+    const isAlreadyDone = doneAfterSave.includes(result.status);
+    document.getElementById('btn-send-finance').disabled = isAlreadyDone;
+    document.getElementById('btn-submit').disabled = isAlreadyDone;
 
     // ถ้าไม่ได้กดจาก draft/approve/finance → redirect ไป list
     if (!status || status === 'SAVED') {
