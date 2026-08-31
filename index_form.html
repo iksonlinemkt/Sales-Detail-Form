@@ -1878,6 +1878,16 @@ async function sendToFinance() {
       round:            1,
     };
 
+    // Debug log
+    console.log('Finance case data:', JSON.stringify(financeCase));
+    // Check for empty string in numeric fields
+    Object.entries(financeCase).forEach(([k,v]) => {
+      if (v === '' && ['car_price','equipment','sub_down_add','discount_crp','total_car_price','down_real','discount_down','discount_sub_down','total_down','finance_amount','interest','interest_discount','real_interest','term','installment'].includes(k)) {
+        console.error(`Empty string in numeric field: ${k}`);
+        financeCase[k] = 0;
+      }
+    });
+
     await dbInsert('finance_cases', financeCase);
 
     // Link back to sales_order
